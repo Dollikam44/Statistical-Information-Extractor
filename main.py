@@ -23,7 +23,7 @@ def remove_headers(text):
 
     return filtered_text
 
-'''
+
 def convert_pdf_to_txt():
     # Wähle ein PDF
     pdf_file_path = filedialog.askopenfilename(title="Select PDF file", filetypes=[("PDF Files", "*.pdf")])
@@ -104,7 +104,7 @@ def convert_pdf_to_txt():
             #Es wird auf disply Interface geschrieben, ob PDF Problemlos konvertiert ist
             txt_text.insert(tk.END, f'Text extracted and saved to {txt_file_path} successfully.')
 
-
+'''
 #lade wichtige nlts (NLP) wichtige Packages
 #tokanizieret gegebenen Text in Sätze und Wörter
 nltk.download('punkt') #The Punkt tokenizer is a pre-trained unsupervised machine learning model for tokenizing text into sentences and words. It is widely used in natural language processing (NLP) applications.
@@ -393,8 +393,8 @@ def process_csv_file(input_file):
 
 
 def browse_file():
-    #wähle .txt File für statistical Inforamtio Extraktion
-    file_path = filedialog.askopenfilename()
+    #wähle .txt File für statistical Inforamtion Extraktion
+    file_path = filedialog.askopenfilename(filetypes=[('Text Files', '*.txt')])
     #Wenn es Keine Probleme beim Path geben
     if file_path:
         #lösche alle alte Informationen in Display Window falls was existiert
