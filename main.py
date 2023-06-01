@@ -23,7 +23,7 @@ def remove_headers(text):
 
     return filtered_text
 
-
+'''
 def convert_pdf_to_txt():
     # Wähle ein PDF
     pdf_file_path = filedialog.askopenfilename(title="Select PDF file", filetypes=[("PDF Files", "*.pdf")])
@@ -97,9 +97,13 @@ def convert_pdf_to_txt():
                         file.write(page)
 
                 print(f'Text extracted and saved to {txt_file_path} successfully.')
+                
+                
 
-            print("All PDF files converted to .txt successfully.")
-'''
+            txt_text.delete(1.0, tk.END)
+            #Es wird auf disply Interface geschrieben, ob PDF Problemlos konvertiert ist
+            txt_text.insert(tk.END, f'Text extracted and saved to {txt_file_path} successfully.')
+
 
 #lade wichtige nlts (NLP) wichtige Packages
 #tokanizieret gegebenen Text in Sätze und Wörter
