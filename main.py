@@ -23,7 +23,7 @@ def remove_headers(text):
 
     return filtered_text
 
-
+'''
 def convert_pdf_to_txt():
     # Wähle ein PDF
     pdf_file_path = filedialog.askopenfilename(title="Select PDF file", filetypes=[("PDF Files", "*.pdf")])
@@ -104,7 +104,7 @@ def convert_pdf_to_txt():
             #Es wird auf disply Interface geschrieben, ob PDF Problemlos konvertiert ist
             txt_text.insert(tk.END, f'Text extracted and saved to {txt_file_path} successfully.')
 
-'''
+
 #lade wichtige nlts (NLP) wichtige Packages
 #tokanizieret gegebenen Text in Sätze und Wörter
 nltk.download('punkt') #The Punkt tokenizer is a pre-trained unsupervised machine learning model for tokenizing text into sentences and words. It is widely used in natural language processing (NLP) applications.
@@ -130,41 +130,48 @@ def extract_statistical_info(file_path):
         (r"p\s*(?:[<=>])\s*(0\.(?!\D+)[\d),.;]+|(?!\D+)1(?!\D+)|\.(?!\D+)[\d),.;])\s*", 'p-value'),
         (r'[pP]-?[Vv]alues?.* was .*([Ss]maller|[Bb]igger)\s*.*\s*\d+\.(?!\D+)[\d),.;]+', 'p-value'),
         (r'-*[pP]-?[Vv]alues?.*', 'p-value Context'),
-        #corrected p-value
-        (r"\s*corr?e?c?t?e?d?\s*\s*[–-]\s* p[–-]?\s*\s*[vV]?a?l?u?e?s?\s*.*", 'corrected p-value'),
-        (r"\s*\(?\s*cor\s*-\s*p\s*\)?\s*.*", 'corrected p-value Context'),
+        # corrected p-value
+        (r"\s*corrected\s*[–-]\s* p[–-]?\s*[vV]?a?l?u?e?s?\s*", 'corrected p-value'),
+        # (r"\(?\s*cor\s*-\s*p\)?", 'corrected p-value Context'),
         # Bonferroni-Holm
         (r"Bonferroni[–-]?\s*H?o?l?m?", 'Bonferroni-Holm context'),
 
         # mean
-        (r'\(?\s*[mM]ean\s*[=:]\s*([\d.]+)[s%]?\s*\)', 'Mean value'),# entwieder secunde oder prozent oder keiner davon [s%]?
+        (r'\(?\s*[mM]ean\s*[=:]\s*([\d.]+)[s%]?\s*\)', 'Mean value'),
+        # entwieder secunde oder prozent oder keiner davon [s%]?
         (r'\(?[Mm]ean\s*[=:]?\s*\b([+-]?\d+(?:\.\d+)?)\b', 'Mean value'),
-        (r'([Tt]he\s*|\s*)[mM]ean .* ([Ww]as|of) .*', 'Mean value'),
+        (
+        r'([Tt]he\s*|\s*)[mM]ean .* ([Ww]as|of)\s*(\d+.(?!\D+)[\d),.;]+[s%]?|([\d.]+)[s%]?|\b([+-]?\d+(?:\.\d+)?)\b)\s*',
+        'Mean value'),
         (r'\(?[mMµ]\s*[=:]\s*\d+.(?!\D+)[\d),.;]+[s%]?\s*', 'Mean value'),
 
         # standard deviation
         (r'[Ss]tandard [Dd]eviation\s*.*\s*(of|was set to)', 'Standard Deviation Value'),
-        (r'.*([Ss][Tt]?[dD]|σ)\s*[=:]\s*\b(\d+(?:\.\d+)?)\b.*', 'Standard Deviation Value'),
+        (r'.*\(?([Ss][Tt]?[dD]|σ)\s*[=:]\s*\b(\d+(?:\.\d+)?)\b\)?.*', 'Standard Deviation Value'),
+        (r'.*\s*(\(?\s*[Ss]tandard [Dd]eviation\s*\)?|\(?\s*[Ss][Tt][Dd]\s*\)?)\s*', 'Standard Deviation Value'),
+        (r'\(?\s*[Ss][Dd]\s*[:=]\s*\b(\d+(?:\.\d+)?)\b\)?\.?\)?', 'Standard Deviation Value'),
         # (r'[Ss]tandard [Dd]eviation', 'Standard Deviation'),
 
         # Median
-        (r'\(?[mM]edian\s*[:=]?\s*([\d.]+)[s%]?\)', 'Median value'), # entwieder secunde oder prozent oder keiner davon [s%]?
+        (r'\(?[mM]edian\s*[:=]?\s*([\d.]+)[s%]?\)', 'Median value'),
+        # entwieder secunde oder prozent oder keiner davon [s%]?
         (r'\(?[Mm]edian\s*[=:]?\s*\b([+-]?\d+(?:\.\d+)?)\b', 'Median value'),
 
-        #Max
+        # Max
         (r'\(?[mM]ax\s*[:=]\s*.*', 'Max value'),
-        #Min
+        # Min
         (r'\(?[mM]in\s*[:=]\s*.*', 'Min value'),
 
-        #Odds Ratio Value
-        (r'.*\s*[oO]dds?\s*[Rr]atio\s*(of |[=:]?\s*0\.(?!\D+)[\d),.;]+|[=:]?\s*(?!\D+)1(?!\D+)|[=:]?\s*\.(?!\D+)[\d),.;])\s*.*','Odds Ratio Value '),
-        (r' [Oo][Rr]\s*[:=]\s*','Odds Ratio Value '),
-
+        # Odds Ratio Value
+        (
+        r'.*\s*[oO]dds?\s*[Rr]atio\s*(of |[=:]?\s*0\.(?!\D+)[\d),.;]+|[=:]?\s*(?!\D+)1(?!\D+)|[=:]?\s*\.(?!\D+)[\d),.;])\s*.*',
+        'Odds Ratio Value '),
+        (r' [Oo][Rr]\s*[:=]\s*', 'Odds Ratio Value '),
 
         # Chi-square test
         (r'Chi[–-]?square [Tt]ests?', 'test name is Chi-square'),
 
-        #Chi-square test
+        # Chi-square test
         (r'\(?.*χ\s*2\s*[–-]?.*\)?', 'Test Name is Chi-square test'),
         # Chi-square test Context
         (r'χ\s*2\s*[–-]?[Ss]cores?', 'Chi-square test Context'),
@@ -172,81 +179,109 @@ def extract_statistical_info(file_path):
         (r'.* \(?χ\s*2\s*(\(.*\)\s*|\s*)[:=]\s*', 'Chi-square Value'),
 
         # t-test
-        (r'[Tt]-[Tt]ests?', 'test name is t-test'),
+        (r'[Tt]-[Tt]ests?', 'Test name is t-test'),
 
+        # Shapiro-Wilks Test
+        (r'\(?[sS]hapiro\s*-?[wW]ilks\s*[tT]ests?', 'Test name is Shapiro-Wilks Test'),
 
         # ANOVA Test
         (r'.*\s*ANOVA\s*,?\s*.*', 'test name is ANOVA Test'),
         # ANOVA Test
         (r'.*\(?\s*[Ff]\s*\(\s*\d+\s*,\s*\d+\s*\)\s*=\s*', 'Test statistic Value'),
 
+        # ANOVA Effect Size Eta-squared Value
+        (r',?\(?η\s*2\s*[:=]\s*(0\.(?!\D+)[\d),.;]+|(?!\D+)1(?!\D+)|\.(?!\D+)[\d),.;])',
+         'Effect Size Eta-squared Value η2'),
+
         # Correlation Context
-        (r'[Cc]orrelation\s*.*\s*between', 'Correlation Context'),
+        (r'[Cc]orrelations?\s*.*\s*between', 'Correlation Context'),
+        (r'[Cc]orrelations?\s*ρ', 'Correlation Context'),
+        (r'[pP]earson’?\s*s\s*ρ', 'Pearson’s correlation ρ Context'),
 
         # Pearson Correlation Context
         (r'Pearson’s r', 'Pearson Correlation Context'),
-        #Pearson r Value
+        # Pearson r Value
         (r'\(?\s*r\s*=\s*([+-]?1|[–-]?\s*0\.(?!\D+)[\d),.;]+|[–-]?0\.\.(?!\D+)[\d),.;]+)\s*', 'Pearson r Value'),
+        (
+        r'\(?\s*r\s*\(\s*\d+\s*\)\s*=\s*([+-]?1|[–-]?\s*0\.(?!\D+)[\d),.;]+|[–-]?0\.\.(?!\D+)[\d),.;]+|[–-]?\.(?!\D+)[\d),.;]+)\s*',
+        'Correlation r Value'),
         # Pearson Correlation Coefficient
-        (r'[Pp]?e?a?r?s?o?n?’?s?-?r?—?\(?r\s*[:=<>]\s*([+-]?1|−\s*0\.(?!\D+)[\d),.;]+|0\.\.(?!\D+)[\d),.;]+)\s*',
+        (r'[Pp]earson\s*’?\s*s-?r[–-]?\(?r\s*[:=<>]\s*([+-]?1|−\s*0\.(?!\D+)[\d),.;]+|0\.\.(?!\D+)[\d),.;]+)\s*',
          'Pearson Correlation Coefficient Value'),
         (r'\(?ρ\s*[:=><]\s*\s*(0\.(?!\D+)[\d),.;]+|(?!\D+)[+-]?1(?!\D+)|\.(?!\D+)[\d),.;])\s*',
          'Correlation Coefficient Value'),
+        (r'[Cc]orrelation [Cc]oef(ﬁ|fi)-?\s*cients?\s*(.* was\s*|:|\s*=\s*| are\s*| is\s*)',
+         'Correlation Coefficient Value'),
+
+        # Spearman’s rank
+        (r'[sS]pearman’?\s*s? [Rr]ank', 'Spearman’s rank Context'),
 
         # Wilcoxon signed-rank Test
         (r'.*\s*[wW]ilcoxon [Ss]igned[–-]?\s*[Rr]ank[–-]?\s*[tT]ests?', 'Test Name is Wilcoxon signed-rank Test'),
         # Wilcoxon signed-rank Test statistic V
         (r'.*\s*[wW]ilcoxon [Ss]igned[–-]?\s*[Rr]ank\s*.*[vV]\s*[:=]\s*.*', 'Test statistic V Value'),
+        (r'\s*[Ww]\s*[:=]\s*\b(\d+(?:\.\d+)?)\b', 'Test statistic W Value'),
 
         # Wilcoxon Rrank-Sum Test
         (r'.*\s*[wW]ilcoxon[–-]?\s*[Rr]ank[–-]?\s*[Ss]um[–-]?\s*[tT]ests?', 'Test Name is Wilcoxon Rrank-Sum Test'),
-        (r'.*\s*[wW]ilcoxon[–-]?\s*[mM]ann[–-]?\s*[wW]hitney', 'Test Name is Wilcoxon Rrank-Sum Test'),
+        (r'.*\s*[wW]?i?l?c?o?x?o?n?[–-]?\s*[mM]ann[–-]?\s*[wW]hitney', 'Test Name is Wilcoxon Rrank-Sum Test'),
+        (r'.* [Uu][–-]?\s*[Tt]est', 'Test Name is Wilcoxon Rrank-Sum Test'),
         (r'.*\s*[wW]ilcoxon\s*[rR]ank\s*[Ss]um\s*.*', 'Test Name is Wilcoxon Rrank-Sum Test'),
         # Wilcoxon Rrank-Sum Test statistic W Value
-        (r'[Ww]\s*[:=]\s*.*', 'Test statistic W Value'),
+        (r'\(?\s*(?!\D+)[Ww]\s*[:=]\s*.*', 'Test statistic W Value'),
+        # p-Value von wilcoxon Rank-Sum Test
+        (r'\(?\s*[Mm][Ww]\s*[:=]\s*.*', 'p-Value of wilcoxon Rank-Sum Test MW or mw'),
 
-        #Wilcoxon Test
+        # Wilcoxon Test
         (r'.*\s*[wW]ilcoxon [Tt]ests?\s*.*', 'Test Name is Wilcoxon Test'),
 
-
         # Post-hoc Test
-        (r'.*\s*[pP]ost[–-]?[Hh]oc[–-]?\s*[tT]ests?\s*.*', 'Post-hoc Test'),
+        (r'.*\s*[pP]ost[–-]?[Hh]oc[–-]?\s*[tT]ests?\s*.*', 'Test Name is Post-hoc Test'),
+
+        # Friedman Test
+        (r'[fF]riedman [tT]est', 'Test Name is Friedman Test'),
 
         # Fisher's Exact test
-        (r'[fF]isher’?\s*s [Ee]xact [Tt]ests?\s*,?.?', 'Test Name is Fisher’s Exact test'),
+        (r'[fF]isher’?\s*s [Ee]xact [Tt]?e?s?t?s?\s*,?.?', 'Test Name is Fisher’s Exact test'),
         # Fisher’s Exact Test Context
         (r' \(?[fF][Ee][Tt]:? ', 'Fisher’s Exact Test Context'),
+        (r'[fF]isher’?\s*s? [Tt]ests?\s*,?.?', 'Test Name is Fisher’s Exact test'),
 
-        #Kruskal-Wallis Test
+        # Kruskal-Wallis Test
         (r'-*[kK]ruskal-?\s*[wW]allis\s*.*', 'Test Name is Kruskal-Wallis Test'),
+
+        # Test Statistic H Value
+        (r'\(?[Hh]\(\d+\)\s*[:=]\s*\s*\b(\d+(?:\.\d+)?)\b(\.?|,?|\)?)', 'Test Statistic H Value '),
 
         # Effect Size (Cramer's V)
         (r"Cramer’s [vV]", "Effect Size (Cramer’s V)"),
-        # Effect Size
-        (r"(small|low|large|medium|big)\s*.*\s*[Ee]ffect [Ss]ize", "Effect Size Value"),
+        (r"(small|low|large|medium|big)\s*.*\s*[Ee]ffect [Ss]ize", "Effect Size Context"),
+        # Effect Size Value
         (r".*\s*[Ee]ffect [Ss]ize of", "Effect Size Value"),
         (r".*\s*[Ee]ffect [Ss]ize\s*", "Effect Size Context"),
 
         # Cohen’s Kappa
         (r'.*\s*κ\s*[<=>:]\s*(-1|1|−\s*0\.(?!\D+)[\d),.;]+|0\.(?!\D+)[\d),.;]+)', 'Cohen’s Kappa Value'),
         (r'[cC]ohen’?\s*s\s* [kK]appa.*\(?\s*κ\s*\)?.*', 'Cohen’s Kappa Contect'),
+        (r'[cC]oef(fi|ﬁ)cient [kK]appa.*', 'Cohen’s Kappa Contect'),
+        (r'[cC]ohen’?\s*s\s*kK]appa .* [cC]oef(fi|ﬁ)cient ([Ww]as|:|=)', 'Cohen’s Kappa Value'),
 
-
-        #α Context and value
+        # α Context and value
         (r'\s*\u03B1', ' α Context'),
-        (r'.*\s*\u03B1\s*(of |[<=>:]?\s*0\.(?!\D+)[\d),.;]+|[=:]?\s*(?!\D+)1(?!\D+)|[=:]?\s*\.(?!\D+)[\d),.;])\s*.*', ' α Value'),
+        (r'.*\s*\u03B1\s*(of |[<=>:]?\s*0\.(?!\D+)[\d),.;]+|[=:]?\s*(?!\D+)1(?!\D+)|[=:]?\s*\.(?!\D+)[\d),.;])\s*.*',
+         ' α Value'),
         (r'.*\s*[cC]ronbach’?[Ss]?\s* [aA]lpha', 'Cronbach’s Alpha Context'),
-        (r'.*\s*[aA]lpha\s*.* of .*', 'Alpha Value'),
+        (r'.*\s*[aA]lpha .* of .*', 'Alpha Value'),
 
         # marginal R-squared
-        (r'.* R\s*2 .*', ' marginal R-squared'),
+        (r'.* R\s*2 .*', ' marginal R-squared Context'),
         # marginal R-squared
         (r'.* R\s*2\s*[:=]\s*.*', ' marginal R-squared Value'),
 
-        #Number of Participants
-        #(r'.*[nN]\s*[=:<>]\s*', 'Number of Participants'),
+        # Number of Participants
+        # (r'.*[nN]\s*[=:<>]\s*', 'Number of Participants'),
 
-        #Degree of freedom
+        # Degree of freedom
         (r'.* \(?[dD]\s*[Ff]\s*[=:<>]\s*', 'Degree of freedom'),
 
         # Statistically Difference context
@@ -254,22 +289,22 @@ def extract_statistical_info(file_path):
         # Statistically significant context
         (r"[sS]tatisticall?y? ([Ss]igni(fi|ﬁ)cant|[Ss]igni(fi|ﬁ)cance)", "Statistically Significant context"),
 
-        #Significant Difference context
-        (r"[sS]igni(fi|ﬁ)cant [dD]ifference", "Significant Difference context"),
+        # Significant Difference context
+        (r"[sS]igni(fi|ﬁ)cant( | [Mm]ean )[dD]ifferences?", "Significant Difference context"),
 
         # logistic Regression
-        (r".*([Ll]og [Rr]atio|Logistic Regression).*", "Logistic Regression Context"),
-        #Regression coefficient Context
+        (r".*([Ll]og [Rr]atio|[lL]ogistic [rR]egression).*", "Logistic Regression Context"),
+        # Regression coefficient Context
         (r".* [rR]egression [Cc]oefficients?.*", "Regression coefficient Context"),
-
 
         # Comparing results
         (r".*\s*[rR]esults\s*.*\s*(faster|smaller|bigger|slower)", "Comparing Results "),
         (r".*[oO]n [Aa]verage\s*.*\s*(faster|smaller|bigger|slower)\s*.*than\s*.*", "Comparing Results "),
         (r".*\s*[Cc]omparing .* [Rr]esults?\s*.*", "Comparing Results "),
+        (r"[sS]tatistical [Tt]ests? [cC]ompare?i?n?g?", "Statistical Comparing Context"),
 
-        #System Usability score
-        (r"(SUS|sus) [sS]core", "context about System Usability score"),
+        # System Usability score
+        (r"(SUS|sus) ([sS]core|[vV]alue)", "context about System Usability score"),
 
         # Total Variation Distance
         (r'([tT]otal [vV]ariation [dD]istances?|\(?TVD\)?)', 'Total Variation Distance Context'),
@@ -277,11 +312,19 @@ def extract_statistical_info(file_path):
         (r'TV\s*Ds?\(.*,.*\)\s*=\s*.*', 'Total Variation Distance Value'),
         (r'TV\s*Ds?\ of ', 'Total Variation Distance Value'),
 
-        #Confidence Interval
+        # Confidence Interval
         (r'.*[Cc]on(fi|ﬁ)dence [iI]ntervals?', 'Confidence Interval Context'),
-        #Confidence Interval Value
-        (r'.*[Cc]\.?[Ii]\s*=\s*\[.*,.*\].?', 'Confidence Interval Value'),
+        # Confidence Interval Value
+        (r'.*[Cc]\.?[Ii]\s*[=:]\s*\[.*,.*\].?', 'Confidence Interval Value'),
+        (r'\(?[Cc]\.?[Ii]\s*\[.*,.*\],?.?\)?', 'Confidence Interval Value'),
 
+        # Bernoulli Trail
+        (r'\s*[bB]ernoulli\s*.*', 'Bernoulli Trail Context'),
+        # Bernoulli Trail Value
+        (r'\(?[bB][:=]\s*((0\.(?!\D+)[\d),.;]+|(?!\D+)1(?!\D+)|\.(?!\D+)[\d),.;])|0|1)\s*.*', 'Bernoulli Trail Value'),
+
+        # acceptance criteria Value
+        (r'.*\s*[Aa]cceptance [Cc]riteria (of|was|=|:)\s*', 'acceptance criteria Value'),
 
     ]
 
@@ -393,8 +436,8 @@ def process_csv_file(input_file):
 
 
 def browse_file():
-    #wähle .txt File für statistical Inforamtion Extraktion
-    file_path = filedialog.askopenfilename(filetypes=[('Text Files', '*.txt')])
+    #wähle .txt File für statistical Inforamtio Extraktion
+    file_path = filedialog.askopenfilename()
     #Wenn es Keine Probleme beim Path geben
     if file_path:
         #lösche alle alte Informationen in Display Window falls was existiert
