@@ -185,7 +185,7 @@ def extract_statistical_info(file_path):
         (r'\(?\s*[Ss][Dd]\s*[:=]\s*\b(\d+(?:\.\d+)?)\b\)?\.?\)?', 'Standard Deviation Value'),
         (r'\(?\s*(?:S|s)(?:D|d)\s*[:=]\s*\b(\d+(?:\.\d+)?)\b\)?\.?\)?', 'Standard Deviation Value'),
         (r' \(\s*[Ss][Dd]\s*\)\.?,? ', 'Standard Deviation Context'),
-        # (r'[Ss]tandard [Dd]eviation', 'Standard Deviation'),
+        (r'\(?\s*σ2\s*[:=]\s*[+–-]?\s*\d+\.\d+\s*\)?\.?,?', 'σ^2 Value'),
 
         # Median
         (r'\(?[mM]edian\s*[:=]?\s*([\d.]+)[s%]?\)', 'Median value'), # entwieder secunde oder prozent oder keiner davon [s%]?
@@ -481,6 +481,9 @@ def extract_statistical_info(file_path):
         ('[Ss]tatistical [Pp]ower\s*( [oO]f | was |=\s*|:\s*)','Statistical Power Value '),
         # statistical Power Value
         ('\(?\s*power of 0\.\d+\s*\)?,?\.?', 'Power Value '),
+
+        #Z-Scoure Value
+        ('\(?\s*[zZ]\s*[–-]?\s*[Ss]cores?\s*(of|=|:|<|>|is|was|were)\s*[–-]?\s*\d+\.\d+\s*\)?\.?,?', 'Z-Scoure Value'),
 
 
     ]
