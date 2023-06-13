@@ -401,7 +401,7 @@ def extract_statistical_info(file_path):
         #Degree of freedom
         (r'.* \(?[dD]\s*[Ff]\s*[=:<>]\s*', 'Degree of freedom'),
 
-        # Degree of freedom
+        #λ value
         (r'\(?\s*λ\s*[:=]\s*[–-]?\s*\d+\.\d+\)?,?\.?', 'λ value'),
 
         #Significant level Value
