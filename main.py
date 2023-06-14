@@ -175,6 +175,7 @@ def extract_statistical_info(file_path):
         (r'([Tt]he\s*|\s*\(?)[mM]ean .*\s*([Ww]as|are) (\d+.(?!\D+)[\d),.;]+[s%]?|([\d.]+)[s%]?|\b([+-]?\d+(?:\.\d+)?)\b)\s*', 'Mean value'),
         (r' \(?[mMµ]\s*[=:]\s*\d+.(?!\D+)[\d),.;]+[s%]?\s*', 'Mean value'),
         (r'\(?\s*[Mm]ean of (\d+\.\d+[s%]?|\d+[s%]?)\)?\.?\,?', 'Mean value'),
+        (r'\(?\s*[Mm]ean of \.\d+\)?\.?,?', 'Mean value'),
         (r'\(?\s*[Mm]ean .* of (\d+\.\d+[s%]?|\d+[s%]?)\)?\.?\,?', 'Mean value'),
 
 
@@ -216,6 +217,7 @@ def extract_statistical_info(file_path):
         (r'χ\s*2\s*[–-]?[Ss]cores?', 'Chi-square test Context'),
         # Chi-square Value
         (r'.* \(?χ\s*2\s*(\(.*\)\s*|\s*)[:=]\s*', 'Chi-square Value'),
+        (r',?\(?\(?χ\s*2\s*\[.*\]\s*[:=]\s*[–-]?\s*\d+\.?\d+?\s*\)?\.?,?;?', 'Chi-square Value'),
         (r'.*\(?χ\s*[:=]\s*\)?,?\.?', 'Chi-square Value'),
 
         #f Value
@@ -310,6 +312,8 @@ def extract_statistical_info(file_path):
         # Wilcoxon Rrank-Sum Test statistic W Value
         (r'\(?\s*(?!\D+)[Ww]\s*[:=]\s*.*', 'Test statistic W Value'),
 
+
+
         (r'\(?MWU\)?\.?,?', 'Test Name is Wilcoxon Rrank-Sum Test'),
         #p-Value von wilcoxon Rank-Sum Test
         (r'\(?\s*[Mm][Ww]\s*[:=]\s*.*', 'p-Value of wilcoxon Rank-Sum Test MW or mw'),
@@ -374,6 +378,8 @@ def extract_statistical_info(file_path):
         (r'[cC]oef(fi|ﬁ)cient [kK]appa.*', 'Cohen’s Kappa Contect'),
         (r'[cC]ohen’?\s*s\s*[kK]appa .*[cC]oef(fi|ﬁ)cient ([Ww]as|:|=)\s*\d+\.\d+\s*\)?\.?,?', 'Cohen’s Kappa Value'),
         (r'[kK]appa [Vv]alues?', 'Cohen’s Kappa Context'),
+        (r'\(?[kK]appa value of \d+\.?\d+?\)?\.?,?', 'Kappa Value'),
+        (r'[kK]appa [Vv]alues? ranging from \d+?\.\d+ to \d+?\.?\d+', 'Cohen’s Kappa Value'),
 
 
         #α Context and value
@@ -481,6 +487,16 @@ def extract_statistical_info(file_path):
         ('[Ss]tatistical [Pp]ower\s*( [oO]f | was |=\s*|:\s*)','Statistical Power Value '),
         # statistical Power Value
         ('\(?\s*power of 0\.\d+\s*\)?,?\.?', 'Power Value '),
+
+        #acceptability score Value
+        (',?\(?\s*[aA]cceptability [sS]cores?\s*( [oO]f | was |=\s*|:\s*)\d+?\.?\d+\s*\)?;?\.?,?', 'Acceptability Score Value'),
+
+        #Rank Value
+        (',?\(?\s*[Rr]ank\s*( [oO]f | was |=\s*|:\s*)\d+?\.?\d+\s*\)?;?\.?,?','Rank Value'),
+
+        #τ Value ####### Diese Patterns funktionieren leider nicht für  (τ)
+        #(',?\(?\s*τ\s*( [oO]f | was |=\s*|:\s*)\d+?\.?\d+\s*\)?;?\.?,?', 'τ Value'),
+        #(',?\(?\s*τ [Cc]orrelation [Cc]oefficients?\s*\)?;?\.?,?', 'τ Correlation Coefficient Context'),
 
         #Z-Scoure Value
         ('\(?\s*[zZ]\s*[–-]?\s*[Ss]cores?\s*(of|=|:|<|>|is|was|were)\s*[–-]?\s*\d+\.\d+\s*\)?\.?,?', 'Z-Scoure Value'),
