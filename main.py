@@ -226,8 +226,8 @@ def extract_statistical_info(file_path):
         # t-test
         (r' \(?[Tt][–-]\s*[Tt]ests?\)?\?,?', 'Test name is t-test'),
         (r' \(?[Tt][–-]?\s*[Tt]ests?\)?\?,?', 'Test name is t-test'),
-        (' \(?\s*t-test\s*\)?\.?,? ','Test Name is T-test'),
-        (' \(?\s*t-\s* .* [Cc]orrelation [Tt]ests?\s*\)?\.?,? ', 'Test Name is T-test'),
+        (r' \(?\s*t-test\s*\)?\.?,? ','Test Name is T-test'),
+        (r' \(?\s*t-\s* .* [Cc]orrelation [Tt]ests?\s*\)?\.?,? ', 'Test Name is T-test'),
         #T-test test statistic Value
         (r'\(?\s*[tT]\s*\(\s*\d+\s*,\s*\d+\s*\)\s*[:=]\s*[–-]?\s*([\d.]+)', 'T-test test statistic Value '),
 
@@ -243,14 +243,14 @@ def extract_statistical_info(file_path):
         # ANOVA Effect Size Eta-squared Value
         (r',?\(?η\s*2\s*[:=]\s*(0\.(?!\D+)[\d),.;]+|(?!\D+)1(?!\D+)|\.(?!\D+)[\d),.;])', 'Effect Size Eta-squared Value η2'),
         (r',?\(?η\s*p\s*2\s*[:=]\s*0\.\d+\)?\.?,?','Eta-squared Value ηp^2'),
-        ('\(?ω\s*2\)?','Effect Size ω^2 context'),
-        ('\(?ω\s*2\)?\s*[:=]\s*.*\s*\)?\.?,?', 'Effect Size ω^2 Value'),
+        (r'\(?ω\s*2\)?','Effect Size ω^2 context'),
+        (r'\(?ω\s*2\)?\s*[:=]\s*.*\s*\)?\.?,?', 'Effect Size ω^2 Value'),
 
         #Beta Value
-        ('\(?\s*[\u03B2Ββ]\s*[=:].*','Beta (β) Value'),
+        (r'\(?\s*[\u03B2Ββ]\s*[=:].*','Beta (β) Value'),
 
         #b Value (Beta)
-        ('\(?\s*b\s*[:=<>]\s*−?\s*\d+\.\d+\s*\)?\.?,?', 'b Value (Beta)'),
+        (r'\(?\s*b\s*[:=<>]\s*−?\s*\d+\.\d+\s*\)?\.?,?', 'b Value (Beta)'),
 
 
         # Correlation Context
@@ -362,13 +362,13 @@ def extract_statistical_info(file_path):
         (r"\(?\s*[Ee]ffect [Ss]izes?\s*\)?\.?,?", "Effect Size Context"),
 
         #f^2 Value
-        ('\(?f\s*\s*\s*2\s*[=:><]\s*[–-]?(\d+\.\d+|\.\d+)\)?','f^2 Value'),
+        (r'\(?f\s*\s*\s*2\s*[=:><]\s*[–-]?(\d+\.\d+|\.\d+)\)?','f^2 Value'),
 
         #estimate Value
-        ('\(?[Ee]stimates?\s*[=:><]\s*[–-]?(\d+\.\d+|\.\d+)\)?,?\.?', 'Estimate Value'),
+        (r'\(?[Ee]stimates?\s*[=:><]\s*[–-]?(\d+\.\d+|\.\d+)\)?,?\.?', 'Estimate Value'),
 
         #T Value
-        ('\.?,?\(?\s*t\(\s*\d+\s*\)\s*[:=]\s*[–-]?\s*\d+\.\d+\)?\.?,?', 't Value'),
+        (r'\.?,?\(?\s*t\(\s*\d+\s*\)\s*[:=]\s*[–-]?\s*\d+\.\d+\)?\.?,?', 't Value'),
 
         # Cohen’s Kappa
         (r'.*\s*κ\s*[<=>:]\s*(-1|1|−\s*0\.(?!\D+)[\d),.;]+|0\.(?!\D+)[\d),.;]+)', 'Cohen’s Kappa κ Value'),
@@ -389,7 +389,7 @@ def extract_statistical_info(file_path):
         (r'.*\s*[cC]ronbach’?[Ss]?\s* [aA]lpha', 'Cronbach’s Alpha Context'),
         (r'.*\s*[aA]lpha .* of .*', 'Alpha Value'),
 
-        # marginal R-squared
+        #marginal R-squared
         (r'.* R\s*2 .*', 'Marginal R-squared Context'),
         # marginal R-squared
         (r'.* R\s*2\s*[:=]\s*.*', 'Marginal R-squared Value'),
@@ -398,7 +398,7 @@ def extract_statistical_info(file_path):
         #(φ) Phi Value
         (r'\(?\s*φ\s*[:=]\s*[–-]?\s*\d+\.\d+\s*\)?\.?,?', '(φ) Phi Value'),
 
-        ('\(?[Ss]igni(fi|ﬁ)cant at 0\.\d+ level\s*\)?;?\.?,?','Significant Level Value'),
+        (r'\(?[Ss]igni(fi|ﬁ)cant at 0\.\d+ level\s*\)?;?\.?,?','Significant Level Value'),
 
         #d Value
         (r',?\(?\s*\b(?<![st])d\b\s*[:=]\s*[–-]?\s*\d+\.\d+\)?\.?,?', 'd Value'),
@@ -455,8 +455,8 @@ def extract_statistical_info(file_path):
         (r"[sS]tatistical [Tt]ests? [cC]ompare?i?n?g?", "Statistical Comparing Context"),
 
         #System Usability score
-        (r"(SUS|sus) ([sS]core|[vV]alue)", "context about System Usability score"),
-        (r" [sS]ystem [uU]sability [Ss]cores? ", "context about System Usability score"),
+        #(r"(SUS|sus) ([sS]core|[vV]alue)", "context about System Usability score"),
+        #(r" [sS]ystem [uU]sability [Ss]cores? ", "context about System Usability score"),
 
         #Mean security Score Value
         (r"\(?\s*[Mm]ean [sS]ecurity [Ss]core\s*[:=]\s*\d+\.\d+\s*\)?,?\.?", "Mean security Score Value"),
@@ -484,22 +484,22 @@ def extract_statistical_info(file_path):
         (r'.*\s*[Aa]cceptance [Cc]riteria (of|was|=|:)\s*', 'acceptance criteria Value'),
 
         #statistical Power Value
-        ('[Ss]tatistical [Pp]ower\s*( [oO]f | was |=\s*|:\s*)','Statistical Power Value '),
+        (r'[Ss]tatistical [Pp]ower\s*( [oO]f | was |=\s*|:\s*)','Statistical Power Value '),
         # statistical Power Value
-        ('\(?\s*power of 0\.\d+\s*\)?,?\.?', 'Power Value '),
+        (r'\(?\s*power of 0\.\d+\s*\)?,?\.?', 'Power Value '),
 
         #acceptability score Value
-        (',?\(?\s*[aA]cceptability [sS]cores?\s*( [oO]f | was |=\s*|:\s*)\d+?\.?\d+\s*\)?;?\.?,?', 'Acceptability Score Value'),
+        (r',?\(?\s*[aA]cceptability [sS]cores?\s*( [oO]f | was |=\s*|:\s*)\d+?\.?\d+\s*\)?;?\.?,?', 'Acceptability Score Value'),
 
         #Rank Value
-        (',?\(?\s*[Rr]ank\s*( [oO]f | was |=\s*|:\s*)\d+?\.?\d+\s*\)?;?\.?,?','Rank Value'),
+        (r',?\(?\s*[Rr]ank\s*( [oO]f | was |=\s*|:\s*)\d+?\.?\d+\s*\)?;?\.?,?','Rank Value'),
 
         #τ Value ####### Diese Patterns funktionieren leider nicht für  (τ)
-        #(',?\(?\s*τ\s*( [oO]f | was |=\s*|:\s*)\d+?\.?\d+\s*\)?;?\.?,?', 'τ Value'),
-        #(',?\(?\s*τ [Cc]orrelation [Cc]oefficients?\s*\)?;?\.?,?', 'τ Correlation Coefficient Context'),
+        (r',?\(?\s*τ\s*( [oO]f | was |=\s*|:\s*)\d+?\.?\d+\s*\)?;?\.?,?', 'τ Value'),
+        (r',?\(?\s*τ [Cc]orrelation [Cc]oefficients?\s*\)?;?\.?,?', 'τ Correlation Coefficient Context'),
 
         #Z-Scoure Value
-        ('\(?\s*[zZ]\s*[–-]?\s*[Ss]cores?\s*(of|=|:|<|>|is|was|were)\s*[–-]?\s*\d+\.\d+\s*\)?\.?,?', 'Z-Scoure Value'),
+        (r'\(?\s*[zZ]\s*[–-]?\s*[Ss]cores?\s*(of|=|:|<|>|is|was|were)\s*[–-]?\s*\d+\.\d+\s*\)?\.?,?', 'Z-Scoure Value'),
 
 
     ]
