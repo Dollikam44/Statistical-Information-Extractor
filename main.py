@@ -93,6 +93,7 @@ def convert_pdf_to_txt2():
                 filtered_text = ' '.join(filtered_text.strip().split())
                 filtered_text = re.sub(r'[fF]igure\s*(\d+(?:\.\d+)*)[.,):]?', '', filtered_text)
                 filtered_text = ' '.join(filtered_text.strip().split())
+                #Lösche FußZeilen
                 filtered_text = re.sub(r'Eighteenth Symposium on Usable Privacy and Security \d+', '', filtered_text)
                 filtered_text = re.sub(r'\d+ Eighteenth Symposium on Usable Privacy and Security', '', filtered_text)
                 filtered_text = re.sub(r'Eighteenth Symposium on Usable Privacy and Security', '', filtered_text)
