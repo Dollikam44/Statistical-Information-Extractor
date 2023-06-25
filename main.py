@@ -8,8 +8,6 @@ import csv
 from collections import OrderedDict
 import tkinter as tk
 from tkinter import filedialog
-import pandas as pd
-
 
 #diese Funktion ist für das Löschen von Absatzüberschrifften und ihre Nummernaus dem Textinhalt
 def remove_headers(text):
@@ -144,6 +142,7 @@ nltk.download('punkt') #The Punkt tokenizer is a pre-trained unsupervised machin
 nltk.download('averaged_perceptron_tagger')# POS tagging is the process of labeling each word in a text with its corresponding part of speech (such as noun, verb, adjective, etc.).
 
 #Hier geht es um die Methode von Extraktion der Sätze, die wichtige statistische Werte und Contexte enthalten
+
 def extract_statistical_info(file_path):
     #öffne die ausgewählte .txt File Path
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -154,441 +153,570 @@ def extract_statistical_info(file_path):
     #tokaniziere den Text in .txt File in Sinvolle Sätze mithilve von nltk Bibliothek
     sentences = nltk.sent_tokenize(text)
     #Erstlle Klassifizierte Pattarns (Taggierte Patterns) mithilfe von re, für die wichtigeste statistische Ergebnisse, Tests, Values, Konzepten usw.
-    tags = [
+    tags = [#[–-]?    #(?!\D+)
         # p-values
-        (r"p\s*(?:[<=>])\s*(0\.(?!\D+)[\d),.;]+|(?!\D+)1(?!\D+)|\.(?!\D+)[\d),.;])\s*", 'p-value'),
-        (r"\(?\s*p\s*[:=><]\s*0\.\d+\s*\)?\.?,?", 'p-value'),
-        (r"\(?\s*p\s*-?\s*value\s*[:=><]\s*0\.\d+\s*\)?\.?,?", 'p-value'),
+        (r"\(?\s*p\s*[<=>≥≤]\s*\.\d+\s*\)?\.?,?;?", 'p-value'),
+        (r" \(?\s*p\s*[<=>≥≤]\s*1\s*\)?\.?,?;?", 'p-value'),
+        (r"\(?\s*p\s*[<=>≥≤]\s*0\.\d+\s*\)?\.?,?;?", 'p-value'),
+        (r"\(?\s*p-value\s*\)?\.?,?;?", 'p-value Context'),
+        (r" \(?\s*[Pp] [Vv]alue\s*\)?\.?,?;?", 'p-value'),
+        (r" \(?\s*\d+\.\d+ [Pp]\s*[–-]\s*[Vv]alue\s*\)?\.?,?;?", 'p-value'),
+        (r" \(?\s*\d+\.\d+ [Pp]\s*[Vv]alue\s*\)?\.?,?;?", 'p-value'),
+        (r" \(?\s*\.\d+ [Pp]\s*[–-]\s*[Vv]alue\s*\)?\.?,?;?", 'p-value'),
+        (r" \(?\s*\.\d+ [Pp]\s*[Vv]alue\s*\)?\.?,?;?", 'p-value'),
+        (r"\(?\s*p-values?\s*[=<>≥≤]\s*\.\d+\s*\)?\.?,?;?", 'p-value'),
+        (r"\(?\s*p-values?\s*[=<>≥≤]\s*\d+\.\d+\s*\)?\.?,?;?", 'p-value'),
+        (r"\(?\s*p-value .* smaller than 0?\.\d+\s*\)?\.?,?;?", 'p-value'),
+        (r"\(?\s*p-values .* are .* 0?\.\d+\s*\)?\.?,?;?", 'p-value'),
+        (r"\(?\s*p-?\s*values? of 0?\.\d+\s*\)?\.?,?;?", 'p-value'),
+        (r"\(?\s*cor\s*−\s*p\s*[<=>≥≤]\s*\.\d+\*?\s*\)?\.?,?;?", 'corrected p-value'),
+        (r"\(?\s*cor\s*−\s*p\s*[<=>≥≤]\s*\d\.\d+\*?\s*\)?\.?,?;?", 'corrected p-value'),
 
-        (r"\(?p\s*(?:[<=>])\s*1\.(?!\D+)[\d),.;]\s*", 'p-value'),
-        (r'[pP]-?[Vv]alues?.* was .*([Ss]maller|[Bb]igger)\s*.*\s*\d+\.(?!\D+)[\d),.;]+', 'p-value'),
-        (r'-*[pP]-?[Vv]alues?.*', 'p-value Context'),
-        (r'0\.05\s*p\s*[–-]?\s*[Vv]alue', 'p-value Context'),
-        #corrected p-value
-        (r"\s*corrected\s*[–-]\s* p[–-]?\s*[vV]?a?l?u?e?s?\s*", 'corrected p-value'),
-        #(r"\(?cor\s*[–-]?\s*p\s*(?:[<=>])\s*(0\.(?!\D+)[\d),.;]+|(?!\D+)1(?!\D+)|\.(?!\D+)[\d),.;])\s*", 'corrected p-value'),
-        # Bonferroni-Holm
-        (r"Bonferroni[–-]?\s*H?o?l?m?", 'Bonferroni-Holm context'),
+        #Mann Whitny P-value MW
+        (r" \.?,?;?\(?\s*MW\s*[<=>≥≤]\s*\.\d+\s*\)?\.?,?;?", 'Mann Whitny P-value (MW)'),
+        (r" \.?,?;?\(?\s*MW\s*[<=>≥≤]\s*0\.\d+\s*\)?\.?,?;?", 'Mann Whitny P-value (MW)'),
+        (r" \.?,?;?\(?MW=\d+×10−\d+\)?", 'Mann Whitny P-value (MW)'),
 
-        # mean
-        (r'\(?\s*[mM]ean\s*[=:]\s*([\d.]+)[s%]?\s*\)', 'Mean value'),# entwieder secunde oder prozent oder keiner davon [s%]?
-        (r'\(?[Mm]ean\s*[=:]?\s*\b([+-]?\d+(?:\.\d+)?)\b', 'Mean value'),
-        (r'([Tt]he\s*|\s*\(?)[mM]ean .*\s*([Ww]as|are) (\d+.(?!\D+)[\d),.;]+[s%]?|([\d.]+)[s%]?|\b([+-]?\d+(?:\.\d+)?)\b)\s*', 'Mean value'),
-        (r' \(?[mMµ]\s*[=:]\s*\d+.(?!\D+)[\d),.;]+[s%]?\s*', 'Mean value'),
-        (r'\(?\s*[Mm]ean of (\d+\.\d+[s%]?|\d+[s%]?)\)?\.?\,?', 'Mean value'),
-        (r'\(?\s*[Mm]ean of \.\d+\)?\.?,?', 'Mean value'),
-        (r'\(?\s*[Mm]ean .* of (\d+\.\d+[s%]?|\d+[s%]?)\)?\.?\,?', 'Mean value'),
+        #Participants Number
+        (r"\(?\s*Participants were \d+\s*\)?\.?,?;?", 'Participants Number'),
 
+        #Mean
+        (r"\(?\s*[Mm]ean .*\s*of \d+\.\d+\s*\)?,?\.?;?", 'Mean Value'),
+        (r"\(?\s*[Mm]ean .*\s*of \d+\s*\)?,?\.?;?", 'Mean Value'),
+        (r"\(?\s*[Mm]ean\s*[:=]?\s*\d+\.\d+\s*\)?,?\.?;?", 'Mean Value'),
+        (r"\(?\s*[Mm]ean\s*[:=]?\s*\d+\s*\)?,?\.?;?", 'Mean Value'),
+        (r"\(?\s*[Mm]ean .* was \d+\.\d+\s*\)?,?\.?;?", 'Mean Value'),
+        (r"\(?\s*[Mm]ean .* was \d+\s*\)?,?\.?;?", 'Mean Value'),
+        (r" \.?,?;?\(?\s*[mMµ]\s*[:=]\s*\d+\.\d+\s*\)?,?;?\.?", 'Mean Value'),
+        (r" \.?,?;?\(?\s*[mMµ]\s*[:=]\s*\d+\s*\)?,?;?\.?", 'Mean Value'),
 
-        # standard deviation
-        (r'[Ss]tan-?dard [Dd]eviation\s*.*\s*(of|was set to)\s*\d+\.\d+', 'Standard Deviation Value'),
-        (r'.*\(?([Ss][Tt]?[dD]|σ)\s*[=:]\s*\b(\d+(?:\.\d+)?)\b\)?.*', 'Standard Deviation Value'),
-        (r'.*\s*(\(?\s*[Ss]tandard [Dd]eviation\s*\)?| \(?\s*[Ss][Tt][Dd]\s*\)? )\s*', 'Standard Deviation Value'),
-        (r'\(?\s*[Ss][Dd]\s*[:=]\s*\b(\d+(?:\.\d+)?)\b\)?\.?\)?', 'Standard Deviation Value'),
-        (r'\(?\s*(?:S|s)(?:D|d)\s*[:=]\s*\b(\d+(?:\.\d+)?)\b\)?\.?\)?', 'Standard Deviation Value'),
-        (r' \(\s*[Ss][Dd]\s*\)\.?,? ', 'Standard Deviation Context'),
-        (r'\(?\s*σ2\s*[:=]\s*[+–-]?\s*\d+\.\d+\s*\)?\.?,?', 'σ^2 Value'),
-
-        # Median
-        (r'\(?[mM]edian\s*[:=]?\s*([\d.]+)[s%]?\)', 'Median value'), # entwieder secunde oder prozent oder keiner davon [s%]?
-        (r'\(?[Mm]edian\s*[=:]?\s*\b([+-]?\d+(?:\.\d+)?)\b', 'Median value'),
-        (r'\(?[Mm][Dd]\)?\s*[=:]?\s*\b([+-]?\d+(?:\.\d+)?)\b', 'Median value'),
-        (r'([Tt]he\s*|\s*)[mM]edian .*([Ww]as|of)\s*(\d+.(?!\D+)[\d),.;]+[s%]?|([\d.]+)[s%]?|\b([+-]?\d+(?:\.\d+)?)\b)\s*','Median value'),
+        #Median
+        (r"\(?\s*[Mm]edian .*\s*of \d+\.\d+\s*\)?,?\.?;?", 'Median Value'),
+        (r"\(?\s*[Mm]edian .*\s*of \d+\s*\)?,?\.?;?", 'Median Value'),
+        (r"\(?\s*[Mm]edian\s*[:=]?\s*\d+\s*\)?,?\.?;?", 'Median Value'),
+        (r"\(?\s*[Mm]edian\s*[:=]?\s*\d+\.\d+\s*\)?,?\.?;?", 'Median Value'),
+        (r" \(?\s*[Mm][Dd]\s*[:=]\s*\d+\.\d+\s*\)?,?\.?;?", 'Median Value'),
+        (r" \(?\s*[Mm][Dd]\s*[:=]\s*\d+\s*\)?,?\.?;?", 'Median Value'),
+        (r"\(?\s*[Mm]edian .*\s*was \d+\.\d+\s*\)?,?\.?;?", 'Median Value'),
+        (r"\(?\s*[Mm]edian .*\s*was \d+\s*\)?,?\.?;?", 'Median Value'),
 
         #Max
-        (r'\(?[mM]ax\s*[:=]\s*.*', 'Max value'),
+        (r"\(?\s*[Mm]ax\s*[=:]\s*\d+\.\d+\s*\)?,?\.?;?", 'Max Value'),
+        (r"\(?\s*[Mm]ax\s*[=:]\s*\d+\s*\)?,?\.?;?", 'Max Value'),
+
         #Min
-        (r'\(?[mM]in\s*[:=]\s*.*', 'Min value'),
+        (r"\(?\s*[Mm]in\s*[:=]\s*\d+\.\d+\s*\)?,?\.?;?", 'Min Value'),
+        (r"\(?\s*[Mm]in\s*[:=]\s*\d+\s*\)?,?\.?;?", 'Min Value'),
 
-        #Odds Ratio Value
-        (r'.*\s*[oO]dds?\s*[Rr]atio\s*(of |[=:]?\s*0\.(?!\D+)[\d),.;]+|[=:]?\s*(?!\D+)1(?!\D+)|[=:]?\s*\.(?!\D+)[\d),.;])\s*.*','Odds Ratio Value '),
-        (r' [Oo][Rr]\s*[:=]\s*','Odds Ratio Value '),
-        (r'\(?\s*[Oo][Rr]\s*[:=]\s*(1|[+–-]?0\.(?!\D+)[\d),.;]+|[+–-]?\.(?!\D+)[\d),.;])\s*', 'Odds Ratio Value'), #Problem Lösen
-        (r',?\(?\s*[Oo]dds? [Rr]atio\s*[:=]\s*[+–-]?\s*\d+\.\d+\s*\)?,?\.?', 'Odds Ratio Value'),
-        #Odds Ratio Context
-        (r'\(?\s*[oO]dds [rR]atio\s*\)?,?\.?', 'Odds Ratio Context'),
+        #Range
+        (r"\(?\s*[Rr]ange\s*[=:]?o?f?\s*\d+\s*[–-]\s*\d+\s*\)?,?\.?;?", 'Range'),
+        (r"\(?\s*[Rr]ange\s*[=:]?o?f?\s*\[\s*\d+\s*,\s*\d+\s*\]\s*\)?,?\.?;?", 'Range'),
+        (r"\(?\s*[Rr]ange\s*[=:]?o?f?\s*\[\s*\d+\.\d+\s*,\s*\d+\.\d+\s*\]\s*\)?,?\.?;?", 'Range'),
+        (r"\(?\s*[Rr]ang[ei]?n?g? from \d+\.\d+ to \d+\.\d+\)?,?\.?;?", 'range'),
+        (r"\(?\s*[Rr]ang[ei]?n?g? from \d+\.\d+ to \d+\.\d+\)?,?\.?;?", 'range'),
 
+        #Standard Deviation Value
+        (r" \.?,?;?\(?\s*sd\s*[:=]?\s*\d+\.\d+.*\s*\)?,?\.?;?", 'Standard Deviation Value'),
+        (r" \.?,?;?\(?\s*SD\s*[:=]?\s*\d+\.\d+\s*\)?,?\.?;?", 'Standard Deviation Value'),
+        (r" \.?,?;?\(?\s*sd\s*[:=]?\s*\d+.*\s*\)?,?\.?;?", 'Standard Deviation Value'),
+        (r" \.?,?;?\(?\s*SD\s*[:=]?\s*\d+.*\s*\)?,?\.?;?", 'Standard Deviation Value'),
+        (r" \.?,?;?\(?\s*STD\s*\)?\s*[:=]?\s*\d+\.\d+\s*\)?,?\.?;?", 'Standard Deviation Value'),
+        (r" \.?,?;?\(?\s*std\s*\)?\s*[:=]?\s*\d+\.\d+\s*\)?,?\.?;?", 'Standard Deviation Value'),
+        (r"\(?\s*[Ss]tandard [Dd]eviation of \d+\.\d+\s*\)?,?\.?;?", 'Standard Deviation Value'),
+        (r" \.?,?;?\(?\s*σ\s*[=]\s*\d+\.\d+\s*\)?,?;?\.?", 'Standard Deviation Value'),
+        (r" \.?,?;?\(?\s*σ\s*[=]\s*\d+\%\s*\)?,?;?\.?", 'Standard Deviation Value'),
+        (r"\(?\s*[sS]tandard [dD]eviations?\s*\)?,?;?\.?", 'Standard Deviation Context'),
 
-        # Chi-square test
-        (r'[cC]hi[–-]?[Ss]quared? [Tt]ests?', 'Test Name is Chi-square test'),
+        #Test statistic V
+        (r" \.?,?;?\(?\s*V\s*[=:]\s*\d+\.\d+\s*\)?\.?,?;?", 'Test statistic V'),
+        (r" \.?,?;?\(?\s*V\s*[=:]\s*\d+\s*\)?\.?,?;?", 'Test statistic V'),
+        (r" \.?,?;?\(?\s*V\s*[=:]\s*0\s*\)?\.?,?;?", 'Test statistic V'),
+        #test statistic W Value
+        (r" \.?,?;?\(?\s*(?<![Mm])W\s*[=:]\s*\d+\.\d+\s*\)?\.?,?;?", 'Test statistic W'),
+        (r" \.?,?;?\(?\s*(?<![Mm])W\s*[=:]\s*\d+\s*\)?\.?,?;?", 'Test statistic W'),
+        (r" \.?,?;?\(?\s*(?<![Mm])W\s*[=:]\s*0\s*\)?\.?,?;?", 'Test statistic W'),
+        # test statistic U Value
+        (r" \.?,?;?\(?\s*(?<![MW])U\s*[=:]\s*[–-−]?\s*\d+\.\d+\s*\)?\.?,?;?", 'Test statistic U'),
+        (r" \.?,?;?\(?\s*(?<![MW])U\s*[=:]\s*[–-−]?\s*\d+\s*\)?\.?,?;?", 'Test statistic U'),
+        #test statistic H Value
+        (r" \.?,?;?\(?\s*H\s*\(\s*\d+\s*\)\s*=\s*\d+\.\d+\s*\)?\.?,?;?", 'H Value'),
+        (r" \.?,?;?\(?\s*H\s*\(\s*\d+\s*\)\s*=\s*\d+\s*\)?\.?,?;?", 'H Value'),
+        (r" \.?,?;?\(?\s*H\s*=\s*[–-−]?\s*\d+\.\d+\s*\)?\.?,?;?", 'H Value'),
 
-        #Chi-square test
-        (r'\(?.*χ\s*2\s*[–-]?.*\)?', 'Test Name is Chi-square test'),
-        # Chi-square test Context
-        (r'χ\s*2\s*[–-]?[Ss]cores?', 'Chi-square test Context'),
-        # Chi-square Value
-        (r'.* \(?χ\s*2\s*(\(.*\)\s*|\s*)[:=]\s*', 'Chi-square Value'),
-        (r',?\(?\(?χ\s*2\s*\[.*\]\s*[:=]\s*[–-]?\s*\d+\.?\d+?\s*\)?\.?,?;?', 'Chi-square Value'),
-        (r'.*\(?χ\s*[:=]\s*\)?,?\.?', 'Chi-square Value'),
+        #Z Value
+        (r" \.?,?;?\(?\s*Z\s*[=:]\s*[–-−]?\s*\d+\.\d+\s*\)?\.?,?;?", 'Z Value'),
+        (r" \.?,?;?\(?\s*Z\s*[=:]\s*[–-−]?\s*\d+\s*\)?\.?,?;?", 'Z Value'),
 
-        #f Value
-        (r'.*\(?f\s*[:=]\s*([–-]?\d+\.\d+|[–-]?\.\d+|[–-]?\d+)\s*\)?,?\.?', 'f Value'),
+        (r" \.?,?;?\(?\s*z =\s*[–-−]?-?\s*\d+\.\d+\s*\)?\.?,?;?", 'Z Value'),
+        (r" \.?,?;?\(?\s*z =\s*[–-−]?-?\s*\d+\s*\)?\.?,?;?", 'Z Value'),
 
-        # t-test
-        (r' \(?[Tt][–-]\s*[Tt]ests?\)?\?,?', 'Test name is t-test'),
-        (r' \(?[Tt][–-]?\s*[Tt]ests?\)?\?,?', 'Test name is t-test'),
-        (r' \(?\s*t-test\s*\)?\.?,? ','Test Name is T-test'),
-        (r' \(?\s*t-\s* .* [Cc]orrelation [Tt]ests?\s*\)?\.?,? ', 'Test Name is T-test'),
-        #T-test test statistic Value
-        (r'\(?\s*[tT]\s*\(\s*\d+\s*,\s*\d+\s*\)\s*[:=]\s*[–-]?\s*([\d.]+)', 'T-test test statistic Value '),
+        #b Value
+        (r" \.?,?;?\(?\s*b\s*[=:]\s*[–-−]?\s*\d+\.\d+\s*\)?\.?,?;?", 'b Value'),
 
-        #Shapiro-Wilks Test
-        (r'\(?[sS]hapiro\s*-?[wW]ilks\s*[tT]ests?', 'Test name is Shapiro-Wilks Test'),
-
-
-        # ANOVA Test
-        (r'.*\s*ANOVA\s*,?\s*.*', 'test name is ANOVA Test'),
-        # ANOVA Test
-        (r'.*\(?\s*[Ff]\s*\(\s*\d+\s*,\s*\d+\s*\)\s*=\s*', 'Test statistic Value'),
-
-        # ANOVA Effect Size Eta-squared Value
-        (r',?\(?η\s*2\s*[:=]\s*(0\.(?!\D+)[\d),.;]+|(?!\D+)1(?!\D+)|\.(?!\D+)[\d),.;])', 'Effect Size Eta-squared Value η2'),
-        (r',?\(?η\s*p\s*2\s*[:=]\s*0\.\d+\)?\.?,?','Eta-squared Value ηp^2'),
-        (r'\(?ω\s*2\)?','Effect Size ω^2 context'),
-        (r'\(?ω\s*2\)?\s*[:=]\s*.*\s*\)?\.?,?', 'Effect Size ω^2 Value'),
-
-        #Beta Value
-        (r'\(?\s*[\u03B2Ββ]\s*[=:].*','Beta (β) Value'),
-
-        #b Value (Beta)
-        (r'\(?\s*b\s*[:=<>]\s*−?\s*\d+\.\d+\s*\)?\.?,?', 'b Value (Beta)'),
-
-
-        # Correlation Context
-        (r'[Cc]orrelations?\s*.*\s*between', 'Correlation Context'),
-        (r'[Cc]orrelations?\s*ρ', 'Correlation Context'),
-        (r'[pP]earson’?\s*s\s*ρ', 'Pearson’s correlation ρ Context'),
-
-        # Pearson Correlation Context
-        (r'Pearson’s r', 'Pearson Correlation Context'),
-        #Pearson r Value
-        (r'\(?\s*r\s*=\s*([+-]?1|[–-]?\s*0\.(?!\D+)[\d),.;]+|[–-]?0\.\.(?!\D+)[\d),.;]+)\s*', ' r Value'),
-        (r'\(?\s*r\s*=\s*[+-–]?\.\d+\s*\)?\.?,?', ' r Value'),
-        (r'\(?\s*rs\s*=\s*[+-–]?\d+\.\d+\s*\)?\.?,?', ' r Value'),
-        (r'\(?\s*rs\s*=\s*[+-–]?\.\d+\s*\)?\.?,?', ' r Value'),
-        (r'\(?\s*r\s*\(\s*\d+\s*\)\s*=\s*([+-]?1|[–-]?\s*0\.(?!\D+)[\d),.;]+|[–-]?0\.\.(?!\D+)[\d),.;]+|[–-]?\.(?!\D+)[\d),.;]+)\s*', ' r Value'),
-        # Pearson Correlation Coefficient
-        (r'[Pp]earson\s*’?\s*s-?r[–-]?\(?r\s*[:=<>]\s*([+-]?1|−\s*0\.(?!\D+)[\d),.;]+|0\.\.(?!\D+)[\d),.;]+)\s*',
-         'Pearson Correlation Coefficient Value'),
-        (r'\(?ρ\s*[:=><]\s*\s*(0\.(?!\D+)[\d),.;]+|(?!\D+)[+-]?1(?!\D+)|\.(?!\D+)[\d),.;])\s*','Correlation Coefficient Value'),
-        (r'\(?ρ\s*[:=><].*','Correlation Coefficient Value'),
-        (r'[Cc]orrelation [Cc]oef(ﬁ|fi)-?\s*cients?\s*(.* was\s*|:|\s*=\s*| are\s*| is\s*)', 'Correlation Coefficient Value'),
-        #Pearson’s Correlation Coefficient
-        (r'[pP]earson’?s? [Cc]orrelations? [Cc]oef(ﬁ|fi)-?\s*cients?','Pearson’s Correlation Coefficient Context'),
-        #(r'[pP]earson’?s? ρ', 'Pearson’s Correlation Coefficient Context'),
-
-        #Spearman’s rank
-        (r'[sS]pearman’?\s*s? [Rr]ank', 'Spearman’s rank Context'),
-
-
-        # Wilcoxon signed-rank Test
-        (r'.*\s*[wW]ilcoxon [Ss]igned[–-]?\s*[Rr]anks?[–-]?\s*[tT]ests?', 'Test Name is Wilcoxon signed-rank Test'),
-        (r'\(?[Ss]igned[–-]?\s*[Rr]anks?[–-]?\s*[wW]ilcoxon\)?\.?,?', 'Test Name is Wilcoxon signed-rank Test'),
-        # Wilcoxon signed-rank Test statistic V
-        (r'.*\s*[wW]ilcoxon [Ss]igned[–-]?\s*[Rr]ank\s*.*[vV]\s*[:=]\s*.*', 'Test statistic V Value'),
-        (r'\s*[Ww]\s*[:=]\s*\b(\d+(?:\.\d+)?)\b', 'Test statistic W Value'),
-        # Test statistic Z Value
-        (r'\(?[zZ]\s*[:=<>]\s*[–-]?\s*\d+\.\d+\)?\.?,?', 'Test statistic Z Value'),
-        # Test statistic V Value
-        (r'\(?[Vv]\s*[:=<>]\s*(\d+\.\d+|\d+)\s*\)?\.?,?', 'Test statistic V Value'),
-
-        # Test statistic V Value
-        (r'\(?\s*[Ff]\s*\(.*,.*\)\s*[:=]\s*[–-]?\s*\d+\.\d+\)?\.?,?;?', 'Test statistic Value'),
-
-        #Shapiro-Wilk Test
-        (r'\(?\s*[sS]hapiro-?\s*[wW]ilks?\)?\.?,?', 'Test Name is Shapiro-Wilk Test'),
-
-        #Agreement Value
-        (r'\(?\s*([Ll]evel of [aA]gremment|[aA]greement)\s*(was|rate was|is|were|level was|:|=|<|>)\s*\d+\.\d+\s*\)?\.?,?', 'Agreement Value'),
-
-
-
-        # Wilcoxon Rrank-Sum Test
-        (r'.*\s*[wW]ilcoxon[–-]?\s*[Rr]ank[–-]?\s*[Ss]um[–-]?\s*[tT]ests?', 'Test Name is Wilcoxon Rrank-Sum Test'),
-        (r'.*\s*[wW]?i?l?c?o?x?o?n?[–-]?\s*[mM]ann[–-]?\s*[wW]hitney', 'Test Name is Wilcoxon Rrank-Sum Test'),
-        (r'.* [Uu][–-]?\s*[Tt]est', 'Test Name is Wilcoxon Rrank-Sum Test'),
-        (r'.*\s*[wW]ilcoxon\s*[rR]ank\s*[Ss]um\s*.*', 'Test Name is Wilcoxon Rrank-Sum Test'),
-        (r'\(?\s*[mM]ann\s*-?\s*[Ww]hitney [Tt]est\s*\)?\.?,?', 'Test Name is Wilcoxon Rrank-Sum Test'),
-        (r'\(?\s*[Ww]hitney [Tt]est\s*\)?\.?,?', 'Test Name is Wilcoxon Rrank-Sum Test'),
-        # Wilcoxon Rrank-Sum Test statistic W Value
-        (r'\(?\s*(?!\D+)[Ww]\s*[:=]\s*.*', 'Test statistic W Value'),
-
-
-
-        (r'\(?MWU\)?\.?,?', 'Test Name is Wilcoxon Rrank-Sum Test'),
-        #p-Value von wilcoxon Rank-Sum Test
-        (r'\(?\s*[Mm][Ww]\s*[:=]\s*.*', 'p-Value of wilcoxon Rank-Sum Test MW or mw'),
-        #Test statistic U Value
-        (r'\(?\s*U\s*[:=<>]\s*\d+\.\d+\)?\.?,?', 'Test statistic U Value'),
-        (r'\(?\s*U\s*[:=<>]\s*\d+\)?\.?,?', 'Test statistic U Value'),
-        #Test statistic H Value
-        (r'\(?H\s*[:=<>]\s*\d+\.\d+\)?\.?,?', 'Test statistic H Value'),
-
-
-        #Wilcoxon Test
-        (r'.*\s*[wW]ilcoxon [Tt]ests?\s*.*', 'Test Name is Wilcoxon Test'),
-
-        #Paired Wilcoxon Test
-        (r'\(?Paired [wW]ilcoxon\)?,?\.?', 'Test Name is Pairde Wilcoxon Test'),
-
-
-        # Post-hoc Test
-        (r'.*\s*[pP]ost[–-]?[Hh]oc[–-]?\s*[tT]ests?\s*.*', 'Test Name is Post-hoc Test'),
-
-        #Friedman Test
-        (r'[fF]riedman [tT]est', 'Test Name is Friedman Test'),
-        # Friedman Analysis Context
-        (r'\(?\s*[fF]riedman’?\s*s Analysis\s*', 'Friedman Analysis Context'),
-
-        # Fisher's Exact test
-        (r'[fF]isher’?\s*s [Ee]xact [Tt]?e?s?t?s?\s*\)?,?.?', 'Test Name is Fisher’s Exact test'),
-        # Fisher’s Exact Test Context
-        (r' \(?[fF][Ee][Tt]:? ', 'Fisher’s Exact Test Context'),
-        (r'[fF]isher’?\s*s? [Tt]ests?\s*,?.?', 'Test Name is Fisher’s Exact test'),
-
-
-        #Kruskal-Wallis Test
-        (r'-*[kK]ruskal-?\s*[wW]allis\s*.*', 'Test Name is Kruskal-Wallis Test'),
-
-        #Test Statistic H Value
-        (r'\(?[Hh]\(\d+\)\s*[:=]\s*\s*\b(\d+(?:\.\d+)?)\b(\.?|,?|\)?)', 'Test Statistic H Value '),
-
-        # Effect Size (Cramer's V)
-        (r"Cramer’s [vV]", "Effect Size (Cramer’s V)"),
-        (r"(small|low|large|medium|big)\s*.*\s*[Ee]ffect [Ss]ize", "Effect Size Context"),
-        # Effect Size Value
-        (r".*\s*[Ee]ffect [Ss]ize of", "Effect Size Value"),
-        (r".*\s*[Ee]ffect [Ss]izes of", "Effect Size Value"),
-        (r".*\s*[Ee]ffect [Ss]ize\s*", "Effect Size Context"),
-        (r"\(?\s*[Ee]ffect [Ss]izes?\s*\)?\.?,?", "Effect Size Context"),
-
-        #f^2 Value
-        (r'\(?f\s*\s*\s*2\s*[=:><]\s*[–-]?(\d+\.\d+|\.\d+)\)?','f^2 Value'),
-
-        #estimate Value
-        (r'\(?[Ee]stimates?\s*[=:><]\s*[–-]?(\d+\.\d+|\.\d+)\)?,?\.?', 'Estimate Value'),
+        #F Value
+        (r"\(?\s*[Ff]\s*\(\s*\d+\s*,\s*\d+\s*\)\s*=\s*\d+\.\d+\s*\)?\.?,?;?", 'F Value'),
 
         #T Value
-        (r'\.?,?\(?\s*t\(\s*\d+\s*\)\s*[:=]\s*[–-]?\s*\d+\.\d+\)?\.?,?', 't Value'),
+        (r"\(?\s*[Tt]\s*\(\s*\d+\s*,\s*\d+\s*\)\s*=\s*[–-]?\s*\d+\.\d+\s*\)?\.?,?;?", 'T Value'),
+        (r"\(?\s*[Tt]\s*\(\s*\d+\s*,\s*\d+\s*\)\s*=\s*[–-]?\s*\.\d+\s*\)?\.?,?;?", 'T Value'),
+        (r" \(?\s*[tT]\s*-?\s*[Vv]alues?\s*\)?\.?,?;?", 'T Value Context'),
 
-        # Cohen’s Kappa
-        (r'.*\s*κ\s*[<=>:]\s*(-1|1|−\s*0\.(?!\D+)[\d),.;]+|0\.(?!\D+)[\d),.;]+)', 'Cohen’s Kappa κ Value'),
-        (r'.*\s*[Kk]\s*[<=>:]\s*(-1|1|−\s*0\.(?!\D+)[\d),.;]+|0\.(?!\D+)[\d),.;]+)', 'Cohen’s Kappa κ Value'),
-        (r',?\(?\s*[cC]ohen’?\s*s?\s*d\s*[<=>:]\s*(-1|1|[–-]\s*0\.(?!\D+)[\d),.;]+|0\.(?!\D+)[\d),.;]+)', 'Cohen’s Kappa d Value'),
-        (r'[cC]ohen’?\s*s\s* [kK]appa.*\(?\s*κ\s*\)?.*', 'Cohen’s Kappa Contect'),
-        (r'[cC]oef(fi|ﬁ)cient [kK]appa.*', 'Cohen’s Kappa Contect'),
-        (r'[cC]ohen’?\s*s\s*[kK]appa .*[cC]oef(fi|ﬁ)cient ([Ww]as|:|=)\s*\d+\.\d+\s*\)?\.?,?', 'Cohen’s Kappa Value'),
-        (r'[kK]appa [Vv]alues?', 'Cohen’s Kappa Context'),
-        (r'\(?[kK]appa value of \d+\.?\d+?\)?\.?,?', 'Kappa Value'),
-        (r'[kK]appa [Vv]alues? ranging from \d+?\.\d+ to \d+?\.?\d+', 'Cohen’s Kappa Value'),
+        #Singnificantly different
+        (r"\(?\s*signiﬁcantly different\s*\)?,?\.?;?", 'Singnificantly different Context'),
+        (r"\(?\s*significantly different\s*\)?,?\.?;?", 'Singnificantly different Context'),
+        (r"\(?\s*signiﬁcant differences?\s*\)?,?\.?;?", 'Singnificantly different Context'),# significant difference
+        (r"\(?\s*significant differences?\s*\)?,?\.?;?", 'Singnificantly different Context'),
+        (r"\(?\s*significantly different\s*\)?,?\.?;?", 'Singnificantly different Context'),
+        (r"\(?\s*statistically different\s*\)?,?\.?;?", 'statistically different'),
+        (r"\(?\s*statistical differences?\s*\)?,?\.?;?", 'statistically different'),
+        (r"\(?\s*[Ss]tatistical [Ss]ignificance\s*\)?,?\.?;?", 'statistical significance'),
+        (r"\(?\s*[Ss]tatistical [Ss]igniﬁcance\s*\)?,?\.?;?", 'statistical significance'),
+        (r"\(?\s*[Ss]tatistically [Ss]igniﬁcant\s*\)?,?\.?;?", 'statistical significance'),
+        (r"\(?\s*[Ss]tatistically [Ss]ignificant\s*\)?,?\.?;?", 'statistical significance'),
 
+        #Chi-square test
+        (r"\(?\s*[Cc]hi-[sS]quared?\s*[Tt]?e?s?t?s?\s*\)?\.?,?;?", 'Chi-square test'),
 
-        #α Context and value
-        (r'\s*\u03B1 ', ' α Context'),
-        #(r'\s*\u03B1', ' α Context'),
-        (r'.*\s*\u03B1\s*(of |[<=>:]?\s*0\.(?!\D+)[\d),.;]+|[=:]?\s*(?!\D+)1(?!\D+)|[=:]?\s*\.(?!\D+)[\d),.;])\s*.*', ' α Value'),
-        (r'.*\s*[cC]ronbach’?[Ss]?\s* [aA]lpha', 'Cronbach’s Alpha Context'),
-        (r'.*\s*[aA]lpha .* of .*', 'Alpha Value'),
+        #ANOVA test
+        (r"\(?\s*ANOVA\s*\)?\.?,?;?", 'ANOVA test'),
 
-        #marginal R-squared
-        (r'.* R\s*2 .*', 'Marginal R-squared Context'),
-        # marginal R-squared
-        (r'.* R\s*2\s*[:=]\s*.*', 'Marginal R-squared Value'),
-        (r'\(?R\s*2\s*[:=]\s*.*\)?\.?,?', 'Marginal R-squared Value'),
+        #post-Hoc
+        (r"\(?\s*[Pp]ost-?\s*[Hh]oc\s*\)?\.?,?;?", 'post-Hoc Test'),
+        (r"\(?\s*[Pp]ost-?\s*[Hh]oc [Tt]ests?\s*\)?\.?,?;?", 'post-Hoc Test'),
 
-        #(φ) Phi Value
-        (r'\(?\s*φ\s*[:=]\s*[–-]?\s*\d+\.\d+\s*\)?\.?,?', '(φ) Phi Value'),
+        #Fisher’s exact test
+        (r"\(?\s*[fF]isher’?s? [Ee]xact [Tt]?e?s?t?s?\s*\)?\.?,?;?", 'Fisher’s exact test'),
+        (r"\(?\s*[fF]isher’?s? [Tt]ests?\s*\)?\.?,?;?", 'Fisher’s exact test'),
+        (r" \(?\s*FET\s*:?\s*\)?\.?,?;? ", 'Fisher’s exact test'),
 
-        (r'\(?[Ss]igni(fi|ﬁ)cant at 0\.\d+ level\s*\)?;?\.?,?','Significant Level Value'),
+        #Wilcoxon signed-rank test
+        (r"\(?\s*[Ww]ilcoxon [Ss]igned[–-]?\s*[Rr]anks? [Tt]?e?s?t?s?\s*\)?\.?,?;?", 'Wilcoxon signed-rank test'),
+        (r"\(?\s*[Ss]igne?d?\s*[–-]?\s*[Rr]anks? [Ww]ilcoxon [Tt]?e?s?t?s?\s*\)?\.?,?;?", 'Wilcoxon signed-rank test'),
+
+        #Wilcoxon test
+        (r"\(?\s*[Ww]ilcoxon\s*t?e?s?t?s?\s*\)?\.?,?;?", 'Wilcoxon test'),
+
+        #Wilcoxon-Rank-Sum Tests
+        (r"\(?\s*[Ww]ilcoxon[–-]?\s*[rR]ank[–-]?\s*\s*[sS]um\s* [Tt]?e?s?t?s?\s*\)?\.?,?;?", 'Wilcoxon-Rank-Sum Test'),
+        (r"\(?\s*[wW]ilcoxon [rR]ank [Ss]um\s*:?\s*\)?\.?,?;?", 'Wilcoxon-Rank-Sum Test'),
+        (r"\(?\s*[wW]ilcoxon-?\s*[Rr]ank-?\s*[sS]um\s*\)?\.?,?;?", 'Wilcoxon-Rank-Sum Test'),
+        (r"\(?\s*[Ww]ilcoxon[–-]?\s*[Mm]ann[–-]?\s*[Ww]hitney\s*[Tt]?e?s?t?s?\s*\)?\.?,?;?", 'Wilcoxon-Rank-Sum Test'),
+        (r"\(?\s*[mM]ann-?\s*[wW]hitney\s*\)?\.?,?;?", 'Wilcoxon-Rank-Sum Test'),
+        (r"\(?\s*Mann–Whitney\s*\)?\.?,?;?", 'Wilcoxon-Rank-Sum Test'),
+        (r" \(?\s*[Uu]-?\s*[Tt]ests?\s*\)?\.?,?;? ", 'Wilcoxon-Rank-Sum Test'),
+        (r" \(?\s*Mann-Whitney U test\s*\)?\.?,?;? ", 'Wilcoxon-Rank-Sum Test'),
+        (r" \(?\s*MWU-?\s*[Tt]ests?\s*\)?\.?,?;? ", 'Wilcoxon-Rank-Sum Test'),
+        (r" \(?\s*MWU\s*\)?\.?,?;? ", 'Wilcoxon-Rank-Sum Test'),
+
+        #t-test
+        (r" \(?\s*t-tests?\s*\)?\.?,?;?: ", 't-test'),
+        (r" \(?\s*t tests?\s*\)?\.?,?;?:? ", 't-test'),
+
+        # t-test
+        (r" \(?\s*H-tests?\s*\)?\.?,?;?: ", 'H-test'),
+        (r" \(?\s*H tests?\s*\)?\.?,?;?:? ", 'H-test'),
+
+        #Mood’s median test
+        (r"\(?\s*[mM]ood[s’]?\s*[s’]?[–-−]?\s*[Mm]edian [Tt]ests?\s*\)?\.?,?;?:?", 'Mood’s median test'),
+
+        #Friedman test
+        (r"\(?\s*[fF]riedman\s*[Tt]?e?s?t?s?\s*\)?\.?,?;?:?", 'Friedman test'),
+        #Friedman Analysis
+        (r"\(?\s*[fF]riedman[s’]?\s*[s’]?\s*[Aa]nalysis\s*\)?\.?,?;?", 'Friedman test'),
+
+        #Kruskal-Wallace
+        (r"\(?\s*[Kk]ruskal-?\s*[wW]allace\s*\)?\.?,?;?:?", 'Kruskal-Wallace'),
+
+        #Paired Wilcoxon
+        (r"\(?\s*[pP]aired [wW]ilcoxon\s*[Tt]?e?s?t?s?\s*\)?\.?,?;?:?", 'Paired Wilcoxon'),
+
+        #Shapiro-Wilk Test
+        (r"\(?\s*[sS]hapiro[–-]?\s*[wW]ilks?\s*[Tt]?e?s?t?s?\s*\)?\.?,?;?:?", 'Shapiro-Wilk Test'),
+
+        #Kruskal-Wallis Test Kruskal- Wallis
+        (r"\(?\s*[kK]ruskal-?\s*[wW]allis\s*:?\s*\)?\.?,?;?:?", 'Kruskal-Wallis'),
+        (r"\(?\s*[kK]ruskal-?\s*[wW]allis [Tt]ests?\s*\)?\.?,?;?:?", 'Kruskal-Wallis'),
+
+        #statistical tests comparing
+        (r"\(?\s*[Ss]tatistical [tT]ests? [Cc]omparing\s*\)?\.?,?;? ", 'statistical tests comparing'),
+        (r"\(?\s*[Ss]tatistical [Cc]omparing [tT]ests?\s*\)?\.?,?;? ", 'statistical tests comparing'),
+
+        #Effect Size
+        (r"\(?\s*[Ee]ffect [Ss]izes?\s*\)?\.?,?;?", 'Effect Size Context'),
+        (r"\(?\s*[Ee]ffect [Ss]izes? of \d+\.\d+\s*\)?\.?,?;?", 'Effect Size Value'),
+        (r"\(?\s*\d+\.\d+ [Ee]ffect [Ss]izes?\s*\)?\.?,?;?", 'Effect Size Value'),
+        (r"\(?\s* \.\d+ [Ee]ffect [Ss]izes?\s*\)?\.?,?;?", 'Effect Size Value'),
+        (r"\(?\s*[Ss]mall [Ee]ffect [Ss]izes?\s*\)?\.?,?;?", 'Effect Size Value'),
+        (r"\(?\s*[Ll]arge [Ee]ffect [Ss]izes?\s*\)?\.?,?;?", 'Effect Size Value'),
+        (r"\(?\s*[Mm]edium [Ee]ffect [Ss]izes?\s*\)?\.?,?;?", 'Effect Size Value'),
+        (r"\(?\s*[Ll]imited [Ee]ffect [Ss]izes?\s*\)?\.?,?;?", 'Effect Size Context'),
+        (r"\(?\s*[Ee]ffect [Ss]izes?\s*\(?\s*\[\s*\d+\.\d+\s*,\s*\d+\.\d+\s*\]\s*\)?\s*\)?\.?,?;?", 'Effect Size Value'),
+
+        #Cramer’s V
+        (r"\(?\s*Cramer’s V?\s*\)?\.?,?;?", 'Cramer’s V'),
+        (r"\(?\s*Cramer’s V\s*=\s*\d+\.\d+\s*\)?\.?,?;?", 'Cramer’s V'),
+        (r"\(?\s*Cramer’s V\s*=\s*\.\d+\s*\)?\.?,?;?", 'Cramer’s V'),
+
+        #Log Ratio
+        (r"\(?\s*[lL]og [rR]atio\s*\)?\.?,?;?", 'Log Ratio Context'),
+        (r"\(?\s*[Ll]ogistic [Rr]egression\s*\)?\.?,?;?", 'Logistic Regression Context'),
+
+        #Log Odds
+        (r"\(?\s*[lL]og [Oo]dds?\s*\)?\.?,?;?", 'Log Odds Context'),
+        (r"\(?\s*[lL]og [Oo]dds?\s*[=:]\s*[–-−]?\s*\d+\.\d+\s*\)?\.?,?;?", 'Logistic Odds Value'),
+        (r"\(?\s*[lL]og [Oo]dds? .*of\s*.*\s*[–-−]?\s*\d+\.\d+\s*\)?\.?,?;?", 'Logistic Odds Value'),
+        (r"\(?\s*[Nn]egative [lL]og [Oo]dds?\s*\)?\.?,?;?", 'Negative Log Odds Context'),
+        (r"\(?\s*[Pp]ositive [lL]og [Oo]dds?\s*\)?\.?,?;?", 'Positive Log Odds Context'),
+
+        #Regression coefficients
+        (r"\(?\s*[rR]egression [Cc]oefficients?\s*\)?\.?,?;?", 'Regression coefficients Context'),
+        #linear regression
+        (r"\(?\s*[Ll]inear [Rr]egressions?\s*\)?\.?,?;?", 'linear regression Context'),
+
+        #coefﬁcient Kappa
+        (r"\(?\s*[Cc]oefﬁcient [kK]appa\s*\)?\.?,?;?", 'coefﬁcient Kappa Context'),
+        (r"\(?\s*coefficient [kK]appa\s*\)?\.?,?;?", 'coefﬁcient Kappa Context'),
+        (r"\(?[cC]ohen’?s?\s*[Kk]appa coefﬁcient was \d+\.\d+\s*\)?\.?,?;?", 'Cohen’s Kappa coefﬁcient Value'),
+        (r"\(?[cC]ohen’?s?\s*[Kk]appa coefficient was \d+\.\d+\s*\)?\.?,?;?", 'Cohen’s Kappa coefﬁcient Value'),
+        (r"\(?[cC]ohen’?s?\s*[Kk]appa coefﬁcient was \.\d+\s*\)?\.?,?;?", 'Cohen’s Kappa coefﬁcient Value'),
+        (r"\(?[cC]ohen’?s?\s*[Kk]appa coefficient was \.\d+\s*\)?\.?,?;?", 'Cohen’s Kappa coefﬁcient Value'),
+        (r"\(?[cC]ohen[s’]?\s*[s’]?\s* [cC]onﬁdence [Ii]nterval r?\s*\)?\.?,?;?", 'Cohen’s Conﬁdence Interval Context'),
+        (r"\(?[cC]ohen[s’]?\s*[s’]?\s* [cC]offidence [Ii]nterval r?\s*\)?\.?,?;?", 'Cohen’s Conﬁdence Interval Context'),
+
+        #coefﬁcient
+        (r"\(?\s*[Cc]oefﬁcient\s*\(?\s*\d+\.\d+s*\)?\s*\)?\.?,?;?", 'coefﬁcient Value'),
+        (r"\(?\s*[Cc]oefficient\s*\(?\s*\.\d+s*\)?\s*\)?\.?,?;?", 'coefﬁcient Value'),
+
+        #Bernoulli Trial
+        (r"\(?\s*[Bb]ernoulli\s*[Tt]?r?i?a?l?s?\s*\)?\.?,?;?", 'Bernoulli Trial Context'),
+        (r" \.?,?;?\(?\s*[Bb]\s*=\.\d+\s*\)?\.?,?;?", 'B Value'),
+        (r" \.?,?;?\(?\s*[Bb]\s*=\d+\.\d+\s*\)?\.?,?;?", 'B Value'),
+        (r" \.?,?;?\(?\s*[Bb]\s*=\s*\d+\.\d+×10−\d+\s*\)?\.?,?;?", 'B Value'),
+
+        #Cohens’ Kappa
+        (r"\(?\s*[cC]ohen[s’]?\s*[s’]? [kK]appa\s*\)?\.?,?;?", 'Cohens’ Kappa Context'),
+        (r"\(?\s*κ of \d+\.\d+\s*\)?\.?,?;?", 'Kappa κ Value'),
+        (r"\(?\s*\(κ\) of \d+\.\d+\s*\)?\.?,?;?", 'Kappa κ Value'),
+        (r"\(?\s*Cohen[s’]?\s*[s’]? Kappa .*\s*of .*\s*[–-−]?\s*\d+\.\d+\s*\)?\.?,?;?", 'Kappa Value'),
+        (r"\(?\s*Cohen[s’]?\s*[s’]?\s*κ\s*\)?\.?,?;?", 'Cohens’ Kappa κ Context'),
+        (r"\(?\s*Cohen[s’]?\s*[s’]?\s*[Kk]appa\s*[Cc]oefﬁcient\s*\)?\.?,?;?", 'Cohens’ Kappa coefﬁcient Context'),
+        (r"\(?\s*Cohen[s’]?\s*[s’]?\s*[Kk]appa\s*[Cc]oefficient\s*\)?\.?,?;?", 'Cohens’ Kappa coefﬁcient Context'),
+        (r"\(?\s*Cohen[s’]?\s*[s’]?\s*κ\s*=\s*\.\d+\s*\)?\.?,?;?", 'Kappa κ Value'),
+        (r"\(?\s*κ\s*[>=<]\s*\.\d+\s*\)?\.?,?;?", 'Kappa κ Value'),
+        (r"\(?\s*[Kk]\s*[>=<]\s*\.\d+\s*\)?\.?,?;?", 'Kappa κ Value'),
+        (r"\(?\s*κ\s*[>=<]\s*\d+\.\d+\s*\)?\.?,?;?", 'Kappa κ Value'),
+        (r"\(?\s*κ\s*.*\s*was\s*\d+\.\d+\s*\)?\.?,?;?", 'Kappa κ Value'),
+        (r"\(?\s*κ\s*[Oo]ver\s*\d+\.\d+\s*\)?\.?,?;?", 'Kappa κ Value'),
+        (r"\(?\s*κ\s*[Bb]elow\s*\d+\.\d+\s*\)?\.?,?;?", 'Kappa κ Value'),
+        (r"\(?\s*[Kk]\s*[>=<≥≤]\s*\d+\.\d+\s*\)?\.?,?;?", 'Kappa κ Value'),
+        (r"\(?\s*Cohen[s’]?\s*[s’]?\s*κ\s*=\s*\d+\.\d+\s*\)?\.?,?;?", 'Cohens’ Kappa κ Value'),
+        (r"\(?\s*Cohen[s’]?\s*[s’]?\s*κ values? between \.\d+ and \.\d+\s*\)?\.?,?;?", 'Cohens’ Kappa κ Value'),
+        (r"\(?\s*Cohen[s’]?\s*[s’]?\s*κ values? between \d+\.\d+ and \d+\.\d+\s*\)?\.?,?;?", 'Cohens’ Kappa κ Value'),
+
+        # Cohens’ d
+        (r"\(?\s*Cohen[s’]?\s*[’s]? d\s*=\s*[–-]?\s*\d+\.\d+\s*\)?\.?,?;?", 'Cohens’ d Value'),
+        (r"\(?\s*Cohen[s’]?\s*[’s]? d\s*=\s*[–-]?\s*\.\d+\s*\)?\.?,?;?", 'Cohens’ d Value'),
+        (r"\(?\s*Cohen[s’]?\s*[’s]? d\s*\)?\.?,?;?", 'Cohens’ d Context'),
 
         #d Value
-        (r',?\(?\s*\b(?<![st])d\b\s*[:=]\s*[–-]?\s*\d+\.\d+\)?\.?,?', 'd Value'),
-        (r',?\(?\s*\b(?<![st])d\b\s*[:=]\s*[–-]?\s*\.\d+\)?\.?,?', 'd Value'),
+        (r"\(?\s*d\s*=\s*[–-]?\s*\d+\.\d+\s*\)?\.?,?;?", 'd Value'),
+        (r"\(?\s*d\s*=\s*[–-]?\s*\.\d+\s*\)?\.?,?;?", 'd Value'),
+        (r"\(?\s*[cC]ohen[s’]?\s*[’s]? [Ee]ffect [Ss]ize\s*[Vv]?a?l?u?e?s?\s*\)?\.?,?;?", 'Cohen’s effect size Context'),
+
+        #Pearson’s r # Pearson’s correlation coefﬁcient
+        (r"\(?\s*[pP]earson’?s?\s*r\s*\)?\.?,?;?", 'Pearson’s r Context'),
+
+        #Pearson’s correlation coefﬁcient
+        (r"\(?\s*[Pp]earson[’s]?\s*[’s]?\s* [Cc]orrelation\s*[Cc]?o?e?f?ﬁ?c?i?e?n?t?\s*\)?\.?,?;?", 'Pearson’s correlation coefﬁcient Context'),
+        (r"\(?\s*[Pp]earson[’s]?\s*[’s]?\s* [Cc]orrelation\s*[Cc]?o?e?f?f?i?c?i?e?n?t?\s*\)?\.?,?;?",'Pearson’s correlation coefﬁcient Context'),
+        (r"\(?\s*[Cc]orrelation\s*[Cc]oefficient\s*\)?\.?,?;?",'correlation coefﬁcient Context'),
+        (r"\(?\s*[Cc]orrelation\s*[Cc]oefﬁcient\s*\)?\.?,?;?", 'correlation coefﬁcient Context'),
+
+        # Pearson’s ρ
+        (r"\(?\s*[pP]earson’?s?\s*ρ\s*\)?\.?,?;?", 'Pearson’s  ρ Context'),
+
+        #Agreement Value
+        (r"\(?\s*[Aa]greement was \d+\.\d+\%?\s*\)?\.?,?;?", 'Agreement Value'),
+        (r"\(?\s*[Aa]greement was \.\d+\s*\)?\.?,?;?", 'Agreement Value'),
+        (r"\(?\s*[Aa]greement .*\s*of \d+\.\d+\s*\)?\.?,?;?", 'Agreement Value'),
+
+        #χ2
+        (r"\(?\s*χ\s*2\s*-?[Dd]ifference [Tt]?e?s?t?s?\s*\)?\.?,?;?", 'χ2 Context'),
+        (r"\(?\s*χ\s*2\s*-?[Ss]cores?\s*\)?\.?,?;?", 'χ2 Context'),
+        (r"\(?\s*χ\s*2\s*\)?\.?,?;?", 'χ2 Context'),
+        (r"\(?\s*χ\s*2\s*[–-]?\s*[tT]ests?\s*\)?\.?,?;?", 'χ2 Test'),
+        (r"\(?\s*χ\s*2\s*\(\s*\d+\s*\)\s*=\s*\d+\.\d+\s*\)?\.?,?;?", 'χ2 Value'),
+        (r"\(?\s*χ\s*2\s*=\s*\d+\.\d+\s*\)?\.?,?;?", 'χ2 Value'),
+        (r"\(?\s*χ\s*2\(.*,.*\)\s*=\s*\d+\s*\)?\.?,?;?", 'χ2 Vlaue'),
+        (r"\(?\s*χ\s*2\(.*,.*\)\s*=\s*\d+\.?,?\d+\s*\)?\.?,?;?", 'χ2 Vlaue'),
+        #χ
+        (r"\(?\s*χ\s*\(\s*\d+\s*\)\s*=\s*\d+\.\d+\s*\)?\.?,?;?", 'χ Value'),
+        (r"\(?\s*χ\s*=\s*\d+\.\d+\s*\)?\.?,?;?", 'χ Value'),
+        (r"\(?\s*χ\s*\(.*,.*\)\s*=\s*\d+\s*\)?\.?,?;?", 'χ Vlaue'),
+        (r"\(?\s*χ\s*\(.*,.*\)\s*=\s*\d+\.?,?\d+\s*\)?\.?,?;?", 'χ Vlaue'),
+
+        #Odds Ratio
+        (r"\(?\s*[oO]dds? [rR]atios?\s*\)?\.?,?;?", 'Odds Ratio Context'),
+        (r" \(?\s*O\.R\s*\)?\.?,?;? ", 'Odds Ratio Context'),
+        (r" \(\s*OR\s*\)\s*\.?,?;? ", 'Odds Ratio Context'),
+        (r"\(?\s*OR\s*=\s*[–-]?\s*\d+\.\d+\s*\)?\.?,?;?", 'Odds Ratio Value'),
+        (r"\(?\s*OR\s*=\s*[–-]?\s*\.\d+\s*\)?\.?,?;?", 'Odds Ratio Value'),
+        (r"\(?\s*O\.R\s*=\s*[–-]?\s*\d+\.\d+\s*\)?\.?,?;?", 'Odds Ratio Value'),
+        (r"\(?\s*O\.R\s*=\s*[–-]?\s*\.\d+\s*\)?\.?,?;? ", 'Odds Ratio Value'),
+        (r"\(?\s*[Oo]dds?\s*[Rr]atio\s*[:=]\s*\.\d+\s*\)?\.?,?;?", 'Odds Ratio Value'),
+        (r"\(?\s*[Oo]dds?\s*[Rr]atio\s*[:=]\s*1\s*\)?\.?,?;?", 'Odds Ratio Value'),
+        (r"\(?\s*[Oo]dds?\s*[Rr]atio\s*[:=]\s*\d+\.\d+\s*\)?\.?,?;?", 'Odds Ratio Value'),
+        (r"\(?\s*[Oo]dds?\s*[Rr]atio\s*[:=]\s*[–-]\s*\d+\.\d+\s*\)?\.?,?;? ", 'Odds Ratio Value'),
+
+        #confidence interval
+        (r"\(?\s*[Cc]onfidence [Ii]ntervals?\s*\)?\.?,?;?", 'confidence interval Context'),
+        (r"\(?\s*[Cc]onﬁdence [Ii]ntervals?\s*\)?\.?,?;?", 'confidence interval Context'),
+        (r"\(?\s*\d+\s*\%\s*[Cc]onﬁdence [Ii]ntervals?\s*\)?\.?,?;?", 'confidence interval Value'),
+        (r"\(?\s*\d+\s*\%\s*[Cc]onfidence [Ii]ntervals?\s*\)?\.?,?;?", 'confidence interval Value'),
+        (r"\(?\s*C\.I\s*\)?\.?,?;?", 'confidence interval Context'),
+        (r"\(?\s*C\.?\s*I\s*=\s*\[\s*\d+\.\d+\s*,\s*\d+\.\d+\s*\]\s*\)?\.?,?;?", 'confidence interval Value'),
+        (r"\(?\s*C\.?\s*I\s*=\s*\[\s*\d+\s*,\s*\d+\s*\]\s*\)?\.?,?;?", 'confidence interval Value'),
+        (r"\(?\s*C\.?\s*I\s*=\s*\[\s*\d+\.\d+\s*,\s*\d+\s*\]\s*\)?\.?,?;?", 'confidence interval Value'),
+        (r"\(?\s*C\.?\s*I\s*=\s*\[\s*\d+\s*,\s*\d+\.\d+\s*\]\s*\)?\.?,?;?", 'confidence interval Value'),
+        (r"\(?\s*\d+\s*\%\s*C\s*\.?\s*I\s*\[\s*\d+\s*,\s*\d+\.\d+\s*\]\s*\)?,?\.?;?", 'confidence interval Value'),
+        (r"\(?\s*\d+\s*\%\s*C\s*\.?\s*I\s*\[\s*\d+\.\d+\s*,\s*\d+\.\d+\s*\]\s*\)?,?\.?;?", 'confidence interval Value'),
+        (r"\(?\s*\d+\s*\%\s*C\s*\.?\s*I\s*\[\s*\d+\.\d+\s*,\s*\d+\s*\]\s*\)?,?\.?;?", 'confidence interval Value'),
+        (r"\(?\s*\d+\s*\%\s*C\s*\.?\s*I\s*\[\s*\d+\s*,\s*\d+\s*\]\s*\)?,?\.?;?", 'confidence interval Value'),
+        (r"\(?\s*\d+\s*\%\s*C\s*\.?\s*I\s*\[\s*\d+\s*,\s*\d+\s*\]\s*\)?,?\.?;?", 'confidence interval Value'),
+        (r"\(?\s*\d+\s*\%\s*C\s*\.?\s*I\s*\)?,?\.?;?", 'confidence interval Value'),
+
+        #Kappa   [–-]?
+        (r"\(?\s*κ\s*\)?\.?,?;?", 'Kappa κ Context'),
+        (r"\(?\s*κ\s*[=:><≥≤]\s*\d+?\.\d+\s*\)?\.?,?;?", 'Kappa κ Value'),
+
+        (r"\(?\s*[Kk]appa [Vv]alues?\s*\)?\.?,?;?", 'Kappa κ Context'),
+
+        #β Value
+        (r"\(?\s*β\s*=\s*[–-−]?\s*\d+\.\d+\s*\)?\.?,?;?", 'β Value'),
+        (r"\(?\s*β\s*=\s*[–-−]?\s*\.\d+\s*\)?\.?,?;?", 'β Value'),
+
+        #z-Score
+        (r"\(?\s*[Zz]-[Ss]core\s*\)?\.?,?;?", 'z-score'),
+
+        #correlation coefficients
+        (r"\(?\s*ρ\s*=\s*[–-−]?\s*\.\d+\s*\)?\.?,?;?", 'ρ Value'),
+        (r"\(?\s*ρ\s*=\s*[–-−]?\s*\d+\.\d+\s*\)?\.?,?;?", 'ρ Value'),
+        (r"\(?\s*[pP]earson’?s?\s*[cC]orrelations?\s*ρ\s*\)?\.?,?;?", 'Pearson’s Correlation ρ Context'),
+        #correlation coefficients
+        (r"\(?\s*[Cc]orrelation [Cc]oefﬁ-?\s*\s*cients? .*\s*\d+\.\d+\s*\)?\.?,?;?", 'Correlation Coefficients Value'),
+        (r"\(?\s*[Cc]orrelation [Cc]oeffi-?\s*\s*cients? .*\s*\d+\.\d+\s*\)?\.?,?;?", 'Correlation Coefficients Value'),
+        (r"\(?\s*[Cc]orrelation [Cc]oefﬁ-?\s*\s*cients? .*\s*\.\d+\s*\)?\.?,?;?", 'Correlation Coefficients Value'),
+        (r"\(?\s*[Cc]orrelation [Cc]oeffi-?\s*\s*cients? .*\s*\.\d+\s*\)?\.?,?;?", 'Correlation Coefficients Value'),
+        (r"\(?\s*[Cc]oeffi-?\s*\s*cients?\s*:?\s*[–-]?\s*\d+\.\d+\s*\)?\.?,?;?", 'Coefficient Vlaue'),
+        (r"\(?\s*[Cc]oefﬁ-?\s*\s*cients?\s*:?\s*[–-]?\s*\d+\.\d+\s*\)?\.?,?;?", 'Coefficient Vlaue'),
+        (r"\(?\s*[Cc]oeffi-?\s*\s*cients?\s*:?\s*[–-]?\s*\.\d+\s*\)?\.?,?;?", 'Coefficient Vlaue'),
+        (r"\(?\s*[Cc]oefﬁ-?\s*\s*cients?\s*:?\s*[–-]?\s*\.\d+\s*\)?\.?,?;?", 'Coefficient Vlaue'),
+        #correlation coefficients
+        (r"\(?\s*[Cc]orrelation [Cc]oefﬁcient .* was .*\s*[–-]?\s*\d+\.\d+\s*\)?\.?,?;?", 'Correlation Coefficient Value'),
+        (r"\(?\s*[Cc]orrelation [Cc]oefficient .* was .*\s*\d+[–-]?\s*\.\d+\s*\)?\.?,?;?", 'Correlation Coefficient Value'),
+        (r"\(?\s*[Cc]orrelation [Cc]oefficient .* was .*\s*[–-]?\s*\.\d+\s*\)?\.?,?;?", 'Correlation Coefficient Value'),
+        (r"\(?\s*[Cc]orrelation [Cc]oefﬁcient .* was .*\s*[–-]?\s*\.\d+\s*\)?\.?,?;?", 'Correlation Coefficient Value'),
+        #Spearman’s rank correlation
+        (r"\(?\s*[sS]pearman’?s?\s*[Rr]ank[–-]?\s*[cC]?o?r?r?e?l?a?t?i?o?n?s?\s*\)?\.?,?;?", 'Spearman’s rank correlation Context'),
+
+        #Spearman − ρ
+        (r"\(?\s*Spearman\s*[–-−]?\s*ρ\s*\)?\.?,?;?",'Spearman − ρ'),
+        (r"\(?\s*Spearman\s*[–-−]?\s*ρ\s*=\s*[–-−]?\d+\.\d+\s*\)?\.?,?;?", 'Spearman − ρ Value'),
+        (r"\(?\s*Spearman\s*[–-−]?\s*ρ\s*=\s*[–-−]?\.\d+\s*\)?\.?,?;?", 'Spearman − ρ Value'),
 
         #Degree of freedom
-        (r'.* \(?[dD]\s*[Ff]\s*[=:<>]\s*', 'Degree of freedom'),
+        (r" \(?\s*d\s*f\s*\)?\.?,?;? ", 'Degree of freedom Context'),
+        (r" \(?\s*d\s*f\s*=\s*\d+\s*\)?\.?,?;? ", 'Degree of freedom Value'),
+        (r" \(?\s*d\s*f\s*=\s*\d+\.\d+\s*\)?\.?,?;? ", 'Degree of freedom Value'),
 
-        #λ value
-        (r'\(?\s*λ\s*[:=]\s*[–-]?\s*\d+\.\d+\)?,?\.?', 'λ value'),
+        #Total Variation Distance
+        (r" \(?\s*TVDs?\s*\)?\.?,?;? ", 'Total Variation Distance Context'),
+        (r" \(?\s*TVDs?\s*\(?.*\)?\s*=\s*.*\s*\d+\.\d+\s*\)?\.?,?;? ", 'Total Variation Distance Value'),
+        (r" \(?\s*TVDs?\s*\(?.*\)?\s*=\s*.*\s*\.\d+\s*\)?\.?,?;? ", 'Total Variation Distance Value'),
+        (r"\(?\s*[tT]otal [vV]ariation [dD]istances?\s*\)?\.?,?;?", 'Total Variation Distance Context'),
 
-        #Significant level Value
-        (r"\(?[Ss]igni(fi|ﬁ)can(ce|t) [Ll]evel\s*(=|:|of|was|were|is)\s*\.?\)?,?", "Significant level Value "),
+        #R^2
+        (r" \(?\s*R\s*2\s*\)?\.?,?;? ", 'R^2 Context'),
+        (r"\(?\s*R\s*2\s*=\s*\d+\.\d+\s*\)?\.?,?;?", 'R^2 Vlaue'),
+        (r"\(?\s*R\s*2\s*a\s*d\s*j\s*=\s*\d+\.\d+\s*\)?\.?,?;?", 'R^2 Value'),
+        (r"\(?\s*a\s*d\s*j\s*=\s*\d+\.\d+\s*\)?\.?,?;?", 'R^2 Value'),
 
-        # Statistically Difference context
-        (r"[sS]tatisticall?y? [Dd]ifferen[tc]e?", "Statistically Difference context"),
-        # Statistically significant context
-        (r"[sS]tatisticall?y? ([Ss]igni(fi|ﬁ)cant|[Ss]igni(fi|ﬁ)cance)", "Statistically Significant context"),
-        (r"[sS]ta-?\s*tisticall?y? ([Ss]igni(fi|ﬁ)cant|[Ss]igni(fi|ﬁ)cance)", "Statistically Significant context"),
+        #f^2 Value
+        (r" \.?,?;?:?\(?\s*[fF]\s*2\s*[<=>]\s*[–-−]?\s*\d+\.\d+\s*\)?\.?,?;?", 'f^2 Value'),
+        (r" \.?,?;?:?\(?\s*[fF]\s*2\s*[<=>]\s*[–-−]?\s*\.\d+\s*\)?\.?,?;?", 'f^2 Value'),
 
-        # Statistically Significant Range
-        (r"[sS]tatistical ([Ss]igni(fi|ﬁ)cant|[Ss]igni(fi|ﬁ)cance) [Rr]anges?", "Statistically Significant Range"),
+        # f Value
+        (r" \.?,?;?:?\(?\s*[fF]\s*[<=>]\s*[–-−]?\s*\d+\.\d+\s*\)?\.?,?;?", 'f Value'),
+        (r" \.?,?;?:?\(?\s*[fF]\s*[<=>]\s*[–-−]?\s*\.\d+\s*\)?\.?,?;?", 'f Value'),
 
-        #Significant Difference context
-        (r"[sS]igni(fi|ﬁ)cant( | [Mm]ean )[dD]ifferences?", "Significant Difference context"),
-        (r"[sS]igni(fi|ﬁ)cantly [dD]ifferents?", "Significant Difference context"),
+        #η^2
+        (r"\(?\s*η\s*2\s*=\s*\.\d+\s*\)?\.?,?;?", 'Eta square η^2 Value'),
+        (r"\(?\s*η\s*2\s*=\s*\d+\.\d+\s*\)?\.?,?;?", 'Eta square η^2 Value'),
 
-        # Significant Effect Context
-        (r"\(?\s*we found\s*.*\s*[sS]igni(fi|ﬁ)cant [Ee]ffects?", "Significant Effect Context"),
+        #Statistical Power
+        (r"\(?\s*[Ss]tatistical [pP]ower of \d+\.\d+\s*\)?\.?,?;?", 'Statistical Power Value'),
+        (r"\(?\s*[Ss]tatistical [pP]ower of \.\d+\s*\)?\.?,?;?", 'Statistical Power Value'),
 
-        # logistic Regression
-        (r".*([Ll]og [Rr]atio|[lL]ogistic [rR]egression).*", "Logistic Regression Context"),
-        (r"\(?\s*[lL]ogistic [rR]egression\)?\.?,?", "Logistic Regression Context"),
-        #Regression coefficient Context
-        (r".* [rR]egression [Cc]oefficients?.*", "Regression coefficient Context"),
-        (r"\(?\.?,?\s*[rR]egression [rR]esults?.*(was|are|were)\s* .*\)?\.?,?", "Regression coefficient Context"),
+        #Alpha
+        (r"\(?\s*\u03B1\s*[<=>≥≤]\s*\.\d+\s*\)?,?\.?;?", 'Alpha α Value'),
+        (r" \(?\s*\u03B1\s*[<=>≥≤]\s*\d+\.\d+\s*\)?,?\.?;?", 'Alpha α Value'),
+        (r"\(?\s*\u03B1\s*of\s*\.\d+\s*\)?,?\.?;?", 'Alpha α Value'),
+        (r"\(?\s*\u03B1\s*of\s*\d+\.\d+\s*\)?,?\.?;?", 'Alpha α Vlaue'),
+        (r"\(?\s*\u03B1\s*of\s*\.\d+\s*\)?,?\.?;?", 'Alpha α Value'),
+        (r"\(?\s*\d+\s*≤\s*\u03B1\s*≤\s*\d+\s*\)?,?\.?;?", 'Alpha α Values Range'),
+        (r"\(?\s*\d+\.\d+\s*≤\s*\u03B1\s*≤\s*\d+\.\d+\s*\)?,?\.?;?", 'Alpha α Range Values'),
+        (r"\(?\s*\u03B1\s*[<=>≥≤]\s*d+\.\d+\s*\)?,?\.?;?", 'Alpha α Value'),
+        (r"\(?\s*[aA]lpha [Ll]evels? of\s*d+\.\d+\s*\)?,?\.?;?", 'Alpha Levels Value'),
+        (r"\(?\s*[aA]lpha [Ll]evels? of\s*\.\d+\s*\)?,?\.?;?", 'Alpha Levels Value'),
+        (r"\(?\s*[aA]lpha [Ll]evels? was\s*\.\d+\s*\)?,?\.?;?", 'Alpha Levels Value'),
+        (r"\(?\s*[aA]lpha [Ll]evels? was\s*\d+\.\d+\s*\)?,?\.?;?", 'Alpha Levels Value'),
+        (r"\(?\s*[aA]lpha [Ll]evels? .*\s*\d+\.\d+\s*\)?,?\.?;?", 'Alpha Levels Value'),
+        (r"\(?\s*[aA]lpha [Ll]evels? .*\s*\.\d+\s*\)?,?\.?;?", 'Alpha Levels Value'),
+        (r"\(?\s*[aA]lpha from \.\d+ to \.\d+\)?,?\.?;?", 'Alpha α Range Values'),
+        (r"\(?\s*\u03B1 from \.\d+ to \.\d+\)?,?\.?;?", 'Alpha α Range Values'),
+        (r"\(?\s*[aA]lpha [Rr]ang[ei]?n?g? from \.\d+ to \.\d+\)?,?\.?;?", 'Alpha α Range Values'),
+        (r"\(?\s*\u03B1 [Rr]ang[ei]?n?g? from \.\d+ to \.\d+\)?,?\.?;?", 'Alpha α Range Values'),
+        (r"\(?\s*[aA]lpha from \d+\.\d+ to \d+\.\d+\)?,?\.?;?", 'Alpha α Range Values'),
+        (r"\(?\s*\u03B1 from \d+\.\d+ to \d+\.\d+\)?,?\.?;?", 'Alpha α Range Values'),
+        (r"\(?\s*[aA]lpha [Rr]ang[ei]?n?g? from \d+\.\d+ to \d+\.\d+\)?,?\.?;?", 'Alpha α Range Values'),
+        (r"\(?\s*\u03B1 [Rr]ang[ei]?n?g? from \d+\.\d+ to \d+\.\d+\)?,?\.?;?", 'Alpha α Range Values'),
 
-        #Linear Regression Context
-        (r"\(?\s*[lL]inear [rR]egression\s*\)?\.?,?", "Linear Regression Context"),
+        #Significant Level
+        (r"\(?\s*[Ss]ignifican[tc]e? [Ll]evel of \d+\.\d+\s*\)?,?\.?;?", 'Significant Level Value'),
+        (r"\(?\s*[Ss]ignifican[tc]e? [Ll]evel of \.\d+\s*\)?,?\.?;?", 'Significant Level Value'),
+        (r"\(?\s*[Ss]igniﬁcan[tc]e? [Ll]evel of \d+\.\d+\s*\)?,?\.?;?", 'Significant Level Value'),
+        (r"\(?\s*[Ss]igniﬁcan[tc]e? [Ll]evel of \.\d+\s*\)?,?\.?;?", 'Significant Level Value'),
 
-        #Log Odds Context
-        (r"\(?\s*[lL]og [Oo]dds\s*\)?,?\.?", "Log Odds Context"),
-        #Log Odds Value
-        (r"\(?\s*([lL]og|\s*) [Oo]dds\s*[=:].*", "Log Odds Value"),
+        #Krippendorff’s alpha
+        (r"\(?\s*[kK]rippendorff?[s’]?\s*[s’]?\s*[Aa]lpha\s*\)?,?\.?;?", 'Krippendorff’s alpha Context'),
+        (r"\(?\s*[kK]rippendorff?[s’]?\s*[s’]?\s*[Aa]lpha of \d+\.\d+\s*\)?,?\.?;?", 'Krippendorff’s alpha Value'),
+        (r"\(?\s*[kK]rippendorff?[s’]?\s*[s’]?\s*[Aa]lpha of \.\d+\s*\)?,?\.?;?", 'Krippendorff’s alpha Value'),
+        (r"\(?\s*[kK]rippendorff?[s’]?\s*[s’]?\s*[Aa]lpha was \d+\.\d+\s*\)?,?\.?;?", 'Krippendorff’s alpha Value'),
+        (r"\(?\s*[kK]rippendorff?[s’]?\s*[s’]?\s*[Aa]lpha was \.\d+\s*\)?,?\.?;?", 'Krippendorff’s alpha Value'),
+        (r"\(?\s*[kK]rippendorff?[s’]?\s*[s’]?\s*\u03B1\s*\)?,?\.?;?", 'Krippendorff’s alpha Context'),
+        (r"\(?\s*[kK]rippendorff?[s’]?\s*[s’]?\s*\u03B1 of \d+\.\d+\s*\)?,?\.?;?", 'Krippendorff’s alpha Value'),
+        (r"\(?\s*[kK]rippendorff?[s’]?\s*[s’]?\s*\u03B1 of \.\d+\s*\)?,?\.?;?", 'Krippendorff’s alpha Value'),
+        (r"\(?\s*[kK]rippendorff?[s’]?\s*[s’]?\s*\u03B1 was \d+\.\d+\s*\)?,?\.?;?", 'Krippendorff’s alpha Value'),
+        (r"\(?\s*[kK]rippendorff?[s’]?\s*[s’]?\s*\u03B1 was \.\d+\s*\)?,?\.?;?", 'Krippendorff’s alpha Value'),
+        (r"\(?\s*[kK]rippendorff?[s’]?\s*[s’]?\s*[Aa]lpha\s*[<>=]\s*\(?\s*\d+\.\d+\s*\)?\s*\)?,?\.?;?", 'Krippendorff’s alpha Value'),
+        (r"\(?\s*[kK]rippendorff?[s’]?\s*[s’]?\s*[Aa]lpha\s*[<>=]?\s*\(?\s*\.\d+\s*\)?\s*\)?,?\.?;?", 'Krippendorff’s alpha Value'),
+        (r"\(?\s*[kK]rippendorff?[s’]?\s*[s’]?\s*\u03B1\s*[<>=]\s*\(?\s*\d+\.\d+\s*\)?\s*\)?,?\.?;?", 'Krippendorff’s alpha Value'),
+        (r"\(?\s*[kK]rippendorff?[s’]?\s*[s’]?\s*\s*\u03B1\s*[<>=]?\s*\(?\s*\.\d+\s*\)?\s*\)?,?\.?;?", 'Krippendorff’s alpha Value'),
 
-        #Odds Value
-        #(r" Odds .* of rating .* \d+\.\d+ ", "Odds Value"),
+        #Cronbach’s α
+        (r"\(?\s*Cronbach’?s? \u03B1\s*\)?,?\.?;?", 'Cronbach’s α Context'),
+        (r"\(?\s*Cronbach’?s? \u03B1 of \d+\.\d+\s*\)?,?\.?;?", 'Cronbach’s α Value'),
+        (r"\(?\s*Cronbach’?s? \u03B1 of \.\d+\s*\)?,?\.?;?", 'Cronbach’s α Value'),
+        (r"\(?\s*Cronbach’?s? \u03B1 .*\s*\d+\.\d+\s*\)?,?\.?;?", 'Cronbach’s α Value'),
+        (r"\(?\s*Cronbach’?s? \u03B1 .*\s*\.\d+\s*\)?,?\.?;?", 'Cronbach’s α Value'),
+        (r"\(?\s*Cronbach’?s? [Aa]lpha .*\s*\d+\.\d+\s*\)?,?\.?;?", 'Cronbach’s α Value'),
+        (r"\(?\s*Cronbach’?s? [Aa]lpha .*\s*\.\d+\s*\)?,?\.?;?", 'Cronbach’s α Value'),
+        (r"\(?\s*Cronbach’?s? \u03B1\s*=\s*\.\d+\s*\)?,?\.?;?", 'Cronbach’s α Value'),
+        (r"\(?\s*Cronbach’?s? \u03B1\s*=\s*\d+\.?\d+\s*\)?,?\.?;?", 'Cronbach’s αValue'),
+        (r"\(?\s*Cronbach’?s? \u03B1\s*\(?\s*\d+\.\d+\s*[–-−]?\s*\d+\.\d+\s*\)?,?\.?;?", 'Cronbach’s α Value'),
 
+        #r Value
+        (r"\(?\s*r\s*=\s*−0\.\d+\s*\)?\.?,?;?", 'r Value'),
+        (r"\(?\s*r\s*=\s*-\s*\d+\.\d+\s*\)?\.?,?;?", 'r Value'),
+        (r"\(?\s*r\s*=\s*0\.\d+\s*\)?\.?,?;?", 'r Value'),
+        (r"\(?\s*r\s*=\s*−\.\d+\s*\)?\.?,?;?", 'r Value'),
+        (r"\(?\s*r\s*=\s*\.\d+\s*\)?\.?,?;?", 'r Value'),
+        (r"\(?\s*r\s*\(\s*\d+\s*\)\s*=\s*[–-]?\s*\.\d+\s*\)?\.?,?;?", 'r Value'),
+        (r"\(?\s*r\s*\(\s*\d+\s*\)\s*=\s*[–-]?\s*\d+\.\d+\s*\)?\.?,?;?", 'r Value'),
 
-        # Comparing results
-        (r".*\s*[rR]esults\s*.*\s*(faster|smaller|bigger|slower)", "Comparing Results "),
-        (r".*[oO]n [Aa]verage\s*.*\s*(faster|smaller|bigger|slower)\s*.*than\s*.*", "Comparing Results "),
-        (r".*\s*[Cc]omparing .* [Rr]esults?\s*.*", "Comparing Results "),
-        (r"[sS]tatistical [Tt]ests? [cC]ompare?i?n?g?", "Statistical Comparing Context"),
+        #acceptance criteria
+        (r"\(?\s*[aA]cceptance [Cc]riteria of \d+\.\d+\s*\)?\.?,?;?", 'acceptance criteria Value'),
 
-        #System Usability score
-        #(r"(SUS|sus) ([sS]core|[vV]alue)", "context about System Usability score"),
-        #(r" [sS]ystem [uU]sability [Ss]cores? ", "context about System Usability score"),
+        #Bonferroni–Holm
+        (r"\(?\s*[bB]onferroni[–-]?\s*[hH]?o?l?m?\s*\)?\.?,?;?", 'Bonferroni–Holm Context'),
+        (r"\(?\s*[bB]onferroni [Cc]orrect[ie][od]n?\s*\)?\.?,?;?", 'Bonferroni–Holm Context'),
+        (r"\(?\s*[bB]onferroni[–-]?\s*[Cc]orrect[ie][od]n?\s*\)?\.?,?;?", 'Bonferroni–Holm Context'),
+        (r"\(?\s*[bB]onferoni[–-]?\s*[Cc]orrect[ie][od]n?\s*\)?\.?,?;?", 'Bonferroni–Holm Context'),
 
-        #Mean security Score Value
-        (r"\(?\s*[Mm]ean [sS]ecurity [Ss]core\s*[:=]\s*\d+\.\d+\s*\)?,?\.?", "Mean security Score Value"),
+        #Comparing Results
+        (r"\.?\(?\s*results .* faster than .*\s*\)?\.?,?;?", 'Comparing Results Context and Values'),
+        (r"\.?\(?\s*found .* on average .* faster than .*\s*\)?\.?,?;?", 'Comparing Results Context and Values'),
+        (r"\.?\(?\s*[Cc]omparing .* to .*\s*\)?\.?,?;?", 'Comparing Results Context and Values'),
+        (r" \.?,?;?\(?\s*[Ff]\s*\(.*\)\s*[<>]\s*[Ff]\s*\(.*\)\s*\)?\.?,?;?", 'Comparing Results Values'),
+        (r" \.?,?;?\(?\s*\d+\.\d+\s*[<>]\s*\d+\.\d+\s*\)?\.?,?;?", 'Comparing Results Values'),
 
-        # Total Variation Distance
-        (r'([tT]otal [vV]ariation [dD]istances?|\(?TVD\)?)', 'Total Variation Distance Context'),
-        # Total Variation Distance Value
-        (r'TV\s*Ds?\(.*,.*\)\s*=\s*.*', 'Total Variation Distance Value'),
-        (r'TV\s*Ds?\ of ', 'Total Variation Distance Value'),
-
-        #Confidence Interval
-        (r'.*[Cc]on(fi|ﬁ)dence [iI]ntervals?', 'Confidence Interval Context'),
-        #Confidence Interval Value
-        (r'.*[Cc]\.?[Ii]\s*[=:]\s*\[.*,.*\].?', 'Confidence Interval Value'),
-        (r'\(?[Cc]\.?[Ii]\s*\[.*,.*\]\)?,?\.?', 'Confidence Interval Value'),
-        (r'\(?\s*\d+%\s*[Cc]\.?[Ii]\s*,?.?\)?', 'Confidence Interval Value'),
-        (r',?\(?[Cc]\.?[Ii]\s*\d+\s*%?\s*\[.*,.*\]\)?,?\.?', 'Confidence Interval Value'),
-
-        #Bernoulli Trail
-        (r'\s*[bB]ernoulli\s*.*', 'Bernoulli Trail Context'),
-        # Bernoulli Trail Value
-        (r'\(?[bB][:=]\s*((0\.(?!\D+)[\d),.;]+|(?!\D+)1(?!\D+)|\.(?!\D+)[\d),.;])|0|1)\s*.*', 'Bernoulli Trail Value'),
-
-        #acceptance criteria Value
-        (r'.*\s*[Aa]cceptance [Cc]riteria (of|was|=|:)\s*', 'acceptance criteria Value'),
-
-        #statistical Power Value
-        (r'[Ss]tatistical [Pp]ower\s*( [oO]f | was |=\s*|:\s*)','Statistical Power Value '),
-        # statistical Power Value
-        (r'\(?\s*power of 0\.\d+\s*\)?,?\.?', 'Power Value '),
-
-        #acceptability score Value
-        (r',?\(?\s*[aA]cceptability [sS]cores?\s*( [oO]f | was |=\s*|:\s*)\d+?\.?\d+\s*\)?;?\.?,?', 'Acceptability Score Value'),
-
-        #Rank Value
-        (r',?\(?\s*[Rr]ank\s*( [oO]f | was |=\s*|:\s*)\d+?\.?\d+\s*\)?;?\.?,?','Rank Value'),
-
-        #τ Value ####### Diese Patterns funktionieren leider nicht für  (τ)
-        (r',?\(?\s*τ\s*( [oO]f | was |=\s*|:\s*)\d+?\.?\d+\s*\)?;?\.?,?', 'τ Value'),
-        (r',?\(?\s*τ [Cc]orrelation [Cc]oefficients?\s*\)?;?\.?,?', 'τ Correlation Coefficient Context'),
-
-        #Z-Scoure Value
-        (r'\(?\s*[zZ]\s*[–-]?\s*[Ss]cores?\s*(of|=|:|<|>|is|was|were)\s*[–-]?\s*\d+\.\d+\s*\)?\.?,?', 'Z-Scoure Value'),
-
-
+        #Correlation between
+        (r"\(?\s*[Cc]orrelations? between\)?,?\.?;?", 'Correlation Context'),
+        #Positive and Negative Correlation
+        (r"\(?\s*[pP]ositive [Cc]orrelate?d?i?o?n?\)?,?\.?;?", 'Positive Correlation Context'),
+        (r"\(?\s*[Nn]egative [Cc]orrelate?d?i?o?n?\)?,?\.?;?", 'Negative Correlation Context'),
     ]
-    #Erstelle ein Result_Dictionary.
     results_dict = OrderedDict()
-    #Hier Startet die Algorithmus, statistsche Sätze aus .txt File zu Extrahieren.
-    #For schleife geht von erste Satz in .txt File bis zum letzten Satz
+
     for sentence in sentences:
-        #Initialisiere leeres Tags Liste, die Später alle gefundene Taggierte Pattern in einem Satz enthät
         tags_found = []
-        #For schleife durch alle taggierte Patterns Liste
+        matches_found = []
+        #numbers_found = []
+
         for pattern, tag in tags:
-            #Falls pattern in einem Satz existiert
-            if re.search(pattern, sentence):
-                #Überprüfe ob die gefundene Tag nicht vorher existiert, damit wir Verdupplung vermeiden
-                if tag not in tags_found:
-                    #Addiere Tag in tegs_found List für aktuelle Satz
-                    tags_found.append(tag)
-        #Schreibe alle Tags in tags_found list durch , getrennt
+            matches = re.findall(pattern, sentence)
+
+            if matches:
+                #tags_found.extend(f'"{match}"' for match in matches)
+                #matches_found.append(f'"{tag}"')
+
+                #tags_found.extend(matches)  #richtig
+                #matches_found.append(tag)   #richtig
+
+                #tags_found.extend(matches)
+                #matches_found.extend([tag] * len(matches))
+
+                tags_found.extend([f'{tag}: ({"  ,  ".join(matches)})'])
+                #tags_found.extend([f'{tag}: {match}' for match in matches])
+                matches_found.extend([tag] * len(matches))
+
+        # Find numbers in sentence that do not exist in matches_found
+        #numbers = re.findall(r'\d+', sentence)
+        #unique_numbers = [number for number in numbers if number not in matches_found]
+        #numbers_found.extend(unique_numbers)
+
+        #if tags_found or numbers_found:
         if tags_found:
-            results_dict[sentence] = ", ".join(tags_found)
-    #Hier ist For schleife, dass jede Satz ein Key angibt, und die gefundene Statistische Sätze wie PDF-Ordnung sortiert
-    results = [(k, v) for k, v in results_dict.items()]
-    #Wähle Speicherort für die neue .csv File
+            #results_dict[sentence] = (", ".join(tags_found), ", ".join(matches_found))
+
+            results_dict[sentence] = (", ".join(matches_found), ", ".join(tags_found))   #richtig
+            #results_dict[sentence] = (", ".join(tags_found), ", ".join(matches_found), ", ".join(numbers_found))#For other not tagged Values extraction
+
+            #results_dict[sentence] = (", ".join(map(lambda match: f'"{match}"', matches_found)),", ".join(map(lambda tag: f'"{tag}"', tags_found)))
+
+            #Hier I only tried to Order the Founed Tagged Match as same as they exist in the sentenc but that is not Working
+            #ordered_tags_found = [tag_found for _, tag_found in sorted(zip(matches_found, tags_found))] #Falsch
+            #results_dict[sentence] = (", ".join(matches_found), ", ".join(f'"{match}"' for match in ordered_tags_found)) #Falsch
+            #ordered_matches_found = [match for _, match in sorted(zip(tags_found, matches_found))]
+            #results_dict[sentence] = (", ".join(tags_found), ", ".join(f'"{match}"' for match in ordered_matches_found))
+
+
+    results = [(k, v[0], v[1]) for k, v in results_dict.items()] #richtig
+    #results = [(k, v[0], v[1], v[2]) for k, v in results_dict.items()]
+
     csv_save_directory = filedialog.askdirectory(title="Select directory to save .csv file")
-    #Wenn es kein Problem mit Speicherort Path der .csv File existiert
     if csv_save_directory:
-        #Öffne .CSV File
         output_file_path = os.path.join(csv_save_directory, f"{file_name}_results.csv")
         with open(output_file_path, mode='w', encoding='utf-8', newline='') as file:
-            #Initiealisiere .CSV File für Schreiben un passe HEaders Sentence und Tag in die erste Zeile
             writer = csv.writer(file)
-            writer.writerow(['Sentence', 'Tag'])
-            #For Schleife für alle gefundene Sätze, die statistische Werte oder Informationen enthalten
+            writer.writerow(['Sentence', 'Tag', 'Wert(Match)', 'Numbers'])
             for result in results:
-                #Schreibe alle gefundene Sätze in .csv File
                 writer.writerow(result)
         print(f'Statistical information extracted and saved to {output_file_path} successfully.')
         return output_file_path
 
-#Hier geht es um Statistische Values aus jede gefundene Statistische Satz in neue Spalte in gleichem .csv File zu extrahieren
-def extract_statistical_numbers(sentence):
-    #diefiniere ein Pattern für bestimmte Zahlen, die sich auf statistische Werte basieren
-    decimal_patterns = [
-        r'(\b(?:\w+\W+){0,2})\b([+-]?\d+(?:\.\d+)?)\b',
-        r'(\b(?:\w+\W+){0,2})\b([+-]?\d+(?:\.\d+)?)(?:\W+\w+){0,2}',
 
-        #r'(\b(?:\w+\W+){0,2})\b([+-]?\d+(?:\.\d+)?)\b(?:\W+\w+){0,2}',
-
-    ]
-    #finde alle Numbers in extrahierte statistische Sentences Liste (Spalte) in .csv File
-    extracted_numbers = re.findall(decimal_patterns[0], sentence, re.IGNORECASE)
-    #retern allle gefundene Numbers
-    return [f"{context.strip()} {number}" for context, number in extracted_numbers]
-
-#Hier wird Panda Bibliothek genutzt, da Panda ist gut .csv Files zu bearbeiten
-def process_csv_file(input_file):
-    #Lese ausgewählte .csv Inhalt mithilfe von Panda Lib
-    df = pd.read_csv(input_file)
-    #Extract Numbers mithilfe von vorherige Funktion extract_statistical_numbers(sentence)
-    df['Statistical Values'] = df['Sentence'].apply(extract_statistical_numbers)
-    #join alle gefundene Nambers (Statistische Values zusammen) und speichere die in Neue Spalte "Statistical Values" in gleiche .csv File
-    df['Statistical Values'] = df['Statistical Values'].apply(lambda x: ', '.join(x))
-    df.to_csv(input_file, index=False)
-
-
-#Hier ist die Funktion zum Select .txt File oder mehr als einem .txt File
 def browse_file():
-    #Wähle ein .txt File oder mehr für statistische Information Extraktion
     txt_file_paths = filedialog.askopenfilenames(title="Select .txt Files", filetypes=[("Text Files", "*.txt")])
-    #Wenn es Keine Problem mit ausgewählten File Pathes existieren
     if txt_file_paths:
-        #Lösche alle was vorher in Interface existiert
         txt_text.delete(1.0, tk.END)
         results_text.delete(1.0, tk.END)
         all_rows = []
-        #Loop durch alle ausgewählte .txt Files
         for file_path in txt_file_paths:
-            #hier werden zuerst alle Statistische Sätze Extrahiert und auf Display Window gezeigt
             txt_text.insert(tk.END, f"Processing file: {file_path}\n\n")
             txt_text.update_idletasks()
             results_file_path = extract_statistical_info(file_path)
             txt_text.insert(tk.END, f"Statistical information extracted. Results saved to: {results_file_path}\n\n")
-            #Hier werden die .csv File geöffnet und alle statistische Values aus statistische Sätze Extrahiert
-            #und unter Neue Spalte gespeichert und dann in Display Window in UserIntrface gezeigt
-            txt_text.update_idletasks()
-            process_csv_file(results_file_path)
-            txt_text.insert(tk.END, f"Statistical Values extracted and saved to the CSV file.\n\n")
             txt_text.update_idletasks()
             with open(results_file_path, 'r', encoding='utf-8') as file:
                 csv_reader = csv.DictReader(file)
@@ -596,8 +724,10 @@ def browse_file():
                 for row in csv_reader:
                     sentence = row['Sentence']
                     tag = row['Tag']
-                    combined_value = row['Statistical Values']
-                    rows.append(f"Sentence: {sentence}\nTag: {tag}\nStatistical Values: {combined_value}\n\n")
+                    Matches = row['Wert(Match)']
+                    #Numbers = row['Numbers']
+                    #rows.append(f"Sentence: {sentence}\n Tag: {tag}\n Match: {Matches}\n Other Numbers: {Numbers}\n*******************************************************\n\n")
+                    rows.append(f"Sentence: {sentence}\n\n Tag: {tag}\n\n Match: {Matches}\n\n\n*******************************************************\n\n\n")
                 all_rows.extend(rows)
                 results_text.config(state=tk.NORMAL)
                 results_text.delete(1.0, tk.END)
@@ -605,14 +735,20 @@ def browse_file():
                 results_text.config(state=tk.DISABLED)
 
 
-#Diese Funktion habe ich für mich persönlich gebaut,
-#um mehr als .csv File auszwählen und die in Display window zu schreiben
-#Das war Hilfreicher Für mich,
-#damit ich die Extrahierte Statistische Informationen Results
-#mit Markierte Infors aus PDF-Dokumenten zu vergleichen
-#das ist einfach ein Zwei Loops
-#Zuerst Loop durch alle ausgewählte .csv File
-#Dann Loop durch alle Zeilen in aktuelle .csv File und schreibe alle Zeilen in aktuellen .csv File in Display Window
+def join_txt_files():
+    txt_file_paths = filedialog.askopenfilenames(title="Select .txt Files", filetypes=[("Text Files", "*.txt")])
+    if txt_file_paths:
+        txt_save_directory = filedialog.askdirectory(title="Select directory to save joined .txt file")
+        if txt_save_directory:
+            joined_file_path = os.path.join(txt_save_directory, "joined_file.txt")
+            with open(joined_file_path, 'w', encoding='utf-8') as joined_file:
+                for file_path in txt_file_paths:
+                    with open(file_path, 'r', encoding='utf-8') as file:
+                        content = file.read()
+                        joined_file.write(content)
+                        joined_file.write('\n')
+            print(f'Txt files joined and saved to {joined_file_path} successfully.')
+
 def display_csv_tables():
     csv_file_paths = filedialog.askopenfilenames(title="Select .csv Files", filetypes=[("CSV Files", "*.csv")])
     if csv_file_paths:
@@ -633,7 +769,6 @@ def display_csv_tables():
                 results_text.insert(tk.END, "\n")
         results_text.config(state=tk.DISABLED)
 
-#Hier ist nur Für Interface Aussehen (Bottuns und Display Windows)
 root = tk.Tk()
 root.title("PDF to Txt Converter and Statistical Information Extractor")
 pdf_to_txt_frame = tk.Frame(root)
@@ -644,10 +779,12 @@ pdf_to_txt_button = tk.Button(buttons_frame, text="Convert PDF to Text", command
 pdf_to_txt_button.pack(side=tk.LEFT)
 pdf_to_txt_button = tk.Button(buttons_frame, text="Convert PDF to Text and filter Headers", command=convert_pdf_to_txt2)
 pdf_to_txt_button.pack(side=tk.LEFT, padx=10)
-browse_button = tk.Button(buttons_frame, text="Select .txt File", command=browse_file)
+browse_button = tk.Button(buttons_frame, text="Extract Statistical Sentences and Matches from .txt File", command=browse_file)
 browse_button.pack(side=tk.LEFT, padx=10)
-display_csv_button = tk.Button(buttons_frame, text="Display CSV Tables", command=display_csv_tables)
-display_csv_button.pack(side=tk.LEFT, padx=10)
+join_button = tk.Button(buttons_frame, text="Join .txt Files", command=join_txt_files)
+join_button.pack(side=tk.LEFT, padx=10)
+join_button = tk.Button(buttons_frame, text="Display .csv File", command=display_csv_tables)
+join_button.pack(side=tk.LEFT, padx=10)
 txt_frame = tk.Frame(root)
 txt_frame.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.BOTH, expand=True)
 txt_label = tk.Label(txt_frame, text="Information about files")
