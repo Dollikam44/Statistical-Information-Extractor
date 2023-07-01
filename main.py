@@ -1015,7 +1015,7 @@ root.mainloop()
         # test statistic U Value
         (r" \.?,?;?\(?\s*U\s*[=:]\s*[–-−]?\s*\d+\.\d+", 'Test statistic U'),
         (r" \.?,?;?\(?\s*U\s*[=:]\s*[–-−]?\s*\d+", 'Test statistic U'),
-        #test statistic H Value
+        ##test statistic H Value
         (r" \.?,?;?\(?\s*[hH]\s*\(\s*\d+\s*\)\s*[:=]\s*[–-−]?\s*\d+\.\d+", 'H Value'),
         (r" \.?,?;?\(?\s*[hH]\s*\(\s*\d+\.\d+\s*\)\s*[:=]\s*[–-−]?\s*\d+\.\d+", 'H Value'),
         (r" \.?,?;?\(?\s*[hH]\s*\(\s*\d+\s*\)\s*[:=]\s*[–-−]?\s*\d+", 'H Value'),
