@@ -695,7 +695,7 @@ def extract_statistical_info(file_path):
         output_file_path = os.path.join(csv_save_directory, f"{file_name}_results.csv")
         with open(output_file_path, mode='w', encoding='utf-8', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['Sentence', 'Tag', 'Wert(Match)', 'Numbers'])
+            writer.writerow(['Sentence', 'Tagged Matches', 'Matches', 'Other not tagged Values'])
             for result in results:
                 writer.writerow(result)
         print(f'Statistical information extracted and saved to {output_file_path} successfully.')
@@ -844,10 +844,10 @@ def browse_file():
                 rows = []
                 for row in csv_reader:
                     sentence = row['Sentence']
-                    tag = row['Tag']
-                    Matches = row['Wert(Match)']
-                    Numbers = row['Numbers']
-                    rows.append(f"Sentence: {sentence}\n Tag: {tag}\n Match: {Matches}\n Other Numbers: {Numbers}\n*******************************************************\n\n")
+                    tag = row['Tagged Matches']
+                    Matches = row['Matches']
+                    Numbers = row['Other not tagged Values']
+                    rows.append(f"Sentence: {sentence}\n Tagged Matches: {tag}\n Matches: {Matches}\n Other not tagged Values: {Numbers}\n*******************************************************\n\n")
                     #rows.append(f"Sentence: {sentence}\n\n Tag: {tag}\n\n Match: {Matches}\n\n\n*******************************************************\n\n\n")
                 all_rows.extend(rows)
                 results_text.config(state=tk.NORMAL)
