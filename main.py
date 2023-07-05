@@ -43,6 +43,45 @@ def convert_pdf_to_txt():
                 filtered_text = re.sub(references_pattern, 'References [1]', filtered_text, flags=re.DOTALL)
                 #Ersetze Quellen Nummern durch Leerzeichen
                 filtered_text = re.sub(r'\[[0-9]+\]', '', filtered_text)
+                filtered_text = re.sub(r'[Ss]ection\s*(\d+(?:\.\d+)*)[.,)]?', '', filtered_text)
+                filtered_text = re.sub(r'[Ss]ections\s*(\d+(?:\.\d+)*)[.,)]?', '', filtered_text)
+                filtered_text = ' '.join(filtered_text.strip().split())
+                filtered_text = re.sub(r'[iI]n [Ss]ection\s*(\d+(?:\.\d+)*)[.,)]?', '', filtered_text)
+                filtered_text = re.sub(r'[Ii]n [Ss]ections\s*(\d+(?:\.\d+)*)[.,)]?', '', filtered_text)
+                filtered_text = ' '.join(filtered_text.strip().split())
+                filtered_text = re.sub(r'[fF]igure\s*(\d+(?:\.\d+)*)[.,):]?', '', filtered_text)
+                filtered_text = ' '.join(filtered_text.strip().split())
+                # Lösche FußZeilen
+                filtered_text = re.sub(r'Eighteenth Symposium on Usable Privacy and Security \d+', '', filtered_text)
+                filtered_text = re.sub(r'\d+ Eighteenth Symposium on Usable Privacy and Security', '', filtered_text)
+                filtered_text = re.sub(r'Eighteenth Symposium on Usable Privacy and Security', '', filtered_text)
+                filtered_text = re.sub(r'Seventeenth Symposium on Usable Privacy and Security \d+', '', filtered_text)
+                filtered_text = re.sub(r'\d+ Seventeenth Symposium on Usable Privacy and Security', '', filtered_text)
+                filtered_text = re.sub(r'Seventeenth Symposium on Usable Privacy and Security', '', filtered_text)
+                filtered_text = re.sub(r'Sixteenth Symposium on Usable Privacy and Security \d+', '', filtered_text)
+                filtered_text = re.sub(r'\d+ Sixteenth Symposium on Usable Privacy and Security', '', filtered_text)
+                filtered_text = re.sub(r'Sixteenth Symposium on Usable Privacy and Security', '', filtered_text)
+                filtered_text = re.sub(r'Fifteenth Symposium on Usable Privacy and Security \d+', '', filtered_text)
+                filtered_text = re.sub(r'\d+ Fifteenth Symposium on Usable Privacy and Security', '', filtered_text)
+                filtered_text = re.sub(r'Fifteenth Symposium on Usable Privacy and Security', '', filtered_text)
+                filtered_text = re.sub(r'Fourteenth Symposium on Usable Privacy and Security \d+', '', filtered_text)
+                filtered_text = re.sub(r'\d+ Fourteenth Symposium on Usable Privacy and Security', '', filtered_text)
+                filtered_text = re.sub(r'Fourteenth Symposium on Usable Privacy and Security', '', filtered_text)
+                filtered_text = re.sub(r'Thirteenth Symposium on Usable Privacy and Security \d+', '', filtered_text)
+                filtered_text = re.sub(r'\d+ Thirteenth Symposium on Usable Privacy and Security', '', filtered_text)
+                filtered_text = re.sub(r'Thirteenth Symposium on Usable Privacy and Security', '', filtered_text)
+                filtered_text = re.sub(r'2016 Symposium on Usable Privacy and Security \d+', '', filtered_text)
+                filtered_text = re.sub(r'\d+ 2016 Symposium on Usable Privacy and Security', '', filtered_text)
+                filtered_text = re.sub(r'2016 Symposium on Usable Privacy and Security', '', filtered_text)
+                filtered_text = re.sub(r'2015 Symposium on Usable Privacy and Security \d+', '', filtered_text)
+                filtered_text = re.sub(r'\d+ 2015 Symposium on Usable Privacy and Security', '', filtered_text)
+                filtered_text = re.sub(r'2015 Symposium on Usable Privacy and Security', '', filtered_text)
+                filtered_text = re.sub(r'Tenth Symposium on Usable Privacy and Security \d+', '', filtered_text)
+                filtered_text = re.sub(r'\d+ Tenth Symposium on Usable Privacy and Security', '', filtered_text)
+                filtered_text = re.sub(r'Tenth Symposium on Usable Privacy and Security', '', filtered_text)
+                filtered_text = re.sub(r'Train TravelNonePap.Dig.Certificate Type107812241091543296537213402654School/Child CareNonePap.Dig.Certificate Type227338027399921741156013001119Grocery','', filtered_text)
+                filtered_text = re.sub(r'PerspicuityDependabilityStimulationEfficiencyNoveltyAttractiveness−3−2−10123Windows HelloPassword','', filtered_text)
+                filtered_text = re.sub(r'USENIX Association', '', filtered_text)
                 #Lösche Extraabstände Nach dem Löschen von Quellen Nummern zwischen Textinhalt
                 filtered_text = ' '.join(filtered_text.strip().split())
                 #Speichere neue Filterd Text in pages
@@ -399,6 +438,8 @@ def extract_statistical_info(file_path):
         (r" \.?,?;?\(?\s*Cramer’s V?", 'Cramer’s V'),
         (r" \.?,?;?\(?\s*Cramer’s V\s*=\s*\d+\.\d+", 'Cramer’s V'),
         (r" \.?,?;?\(?\s*Cramer’s V\s*=\s*\.\d+", 'Cramer’s V'),
+        (r" \.?,?;?\(?\s*Cramer\s*\(cid:31\)\s*sV\s*=\s*\d+\.\d+", 'Cramer’s V'),
+        (r" \.?,?;?\(?\s*\s*Cramer\s*\(cid:31\)\s*sV\s*=\s*\.\d+", 'Cramer’s V'),
 
         # Log Ratio
         (r" \.?,?;?\(?\s*[lL]og [rR]atio\s*\)?,?:?;?\.?", 'Log Ratio Context'),
@@ -1066,6 +1107,8 @@ def extract_statistical_info_with_not_tagged_numbers(file_path):
         (r" \.?,?;?\(?\s*Cramer’s V?", 'Cramer’s V'),
         (r" \.?,?;?\(?\s*Cramer’s V\s*=\s*\d+\.\d+", 'Cramer’s V'),
         (r" \.?,?;?\(?\s*Cramer’s V\s*=\s*\.\d+", 'Cramer’s V'),
+        (r" \.?,?;?\(?\s*Cramer\s*\(cid:31\)\s*sV\s*=\s*\d+\.\d+", 'Cramer’s V'),
+        (r" \.?,?;?\(?\s*\s*Cramer\s*\(cid:31\)\s*sV\s*=\s*\.\d+", 'Cramer’s V'),
 
         # Log Ratio
         (r" \.?,?;?\(?\s*[lL]og [rR]atio\s*\)?,?:?;?\.?", 'Log Ratio Context'),
@@ -1229,6 +1272,7 @@ def extract_statistical_info_with_not_tagged_numbers(file_path):
         (r"[Zz]-[Ss]core of -?\s*\d+\.\d+", 'z-score Value'),
         (r"[Zz]-[Ss]core is -?\s*\d+\.\d+", 'z-score Value'),
         (r"[Zz]-[Ss]core was -?\s*\d+\.\d+", 'z-score Value'),
+
 
         # correlation coefficients
         (r"  \.?,?;?\(?\s*ρ\s*=\s*[–-−]?\s*\.\d+", 'ρ Value'),
@@ -1568,7 +1612,7 @@ def display_csv_tables():
         results_text.config(state=tk.DISABLED)
 
 root = tk.Tk()
-root.title("PDF to Txt Converter and Statistical Information Extractor")
+root.title("PDF in .Txt-File Converter and Statistical Information Extractor")
 pdf_to_txt_frame = tk.Frame(root)
 pdf_to_txt_frame.pack(side=tk.TOP, padx=10, pady=10)
 buttons_frame = tk.Frame(pdf_to_txt_frame)
