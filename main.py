@@ -345,6 +345,10 @@ def extract_statistical_info(file_path):
 
         # Chi-square test
         (r"[Cc]hi-?\s*[sS]quared?\s*[Tt]?e?s?t?s?", 'Chi-square test'),
+        (r"[Cc]hi-?\s*[sS]quare", 'Chi-square test'),
+
+        #McNemar’s test
+        (r"[mM][Cc]\s*[nN]emar’?s [Tt]est", 'McNemar’s test'),
 
         # ANOVA test
         (r" \.?,?;?\(?\s*ANOVA", 'ANOVA test'),
