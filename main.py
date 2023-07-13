@@ -818,20 +818,22 @@ def extract_statistical_info(file_path):
         (r"φ\s*=\s*[–-]?\.\d+", 'Phi (φ) Value'),
 
     ]
-
+    #Erstelle a Dic für die Sätze
     results_dict = OrderedDict()
-
+    #für jede Satz in Sätze-Liste nach Tekenisation
     for sentence in sentences:
+        #leere Lists für gefunden Tages, Matces und Other not tagged Values
         tags_found = []
         matches_found = []
         numbers_not_matched = []
-
+        #Für jede Pattern und Tag in die Taggierte Pattern-Liste Suche nach mindestens statistisches Match
         for pattern, tag in tags:
             matches = re.findall(pattern, sentence)
+            #wenn statistisches Match in Satz gefunden wird, addies dieses tagged Matches in Tags_Found List und addiese Matches in Matches_found List
             if matches:
                 tags_found.append(f'{tag}: ({", ".join(matches)})')
                 matches_found.extend(matches)
-
+        #Suche nach other Values die in statistische extrahierte Sätze existieren, aber nicht in tagged Values existieren und füge sie in die neue Spalte (numbers_not_matched-Liste) mit zwei vorwörter
         if tags_found:
             numbers = re.findall(r'(\w+\s+\w+)\s+(\d+(?:\.\d+)?)', sentence)
             for match in numbers:
@@ -839,11 +841,11 @@ def extract_statistical_info(file_path):
                 number = match[1]
                 if number not in matches_found:
                     numbers_not_matched.append((number, words))
-
+            #join alle gefunden tagged Matches, not tagged Matche und other Numbers in eine Zeile
             results_dict[sentence] = (", ".join(tags_found), ", ".join(matches_found), numbers_not_matched)
-
+    #Result ist hier statistische Sätze, tagged Matches, Matches und other Values (sonstige Werte)
     results = [(k, v[0], v[1], ", ".join([f"{num[1]} {num[0]}" for num in v[2]])) for k, v in results_dict.items()]
-
+    #Speichere Rescult in .csv File
     csv_save_directory = filedialog.askdirectory(title="Select directory to save .csv file")
     if csv_save_directory:
         output_file_path = os.path.join(csv_save_directory, f"{file_name}_results.csv")
